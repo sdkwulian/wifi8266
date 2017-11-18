@@ -1,0 +1,209 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V2.20.1.176 for STM8                 16/Nov/2017  19:21:02
+# Copyright 2010-2015 IAR Systems AB.
+# Standalone license - IAR Embedded Workbench for STMicroelectronics STM8
+#
+#    Source file  =  D:\秦东\test1\wifi-uart - 10-20\Utils\ringbuffer.c
+#    Command line =  
+#        "D:\秦东\test1\wifi-uart - 10-20\Utils\ringbuffer.c" -e -Ol --no_cse
+#        --no_unroll --no_inline --no_code_motion --no_tbaa --no_cross_call
+#        --debug --code_model small --data_model large -o
+#        "D:\秦东\test1\wifi-uart - 10-20\Debug\Obj" --dlib_config "D:\Program
+#        Files (x86)\IAR Systems\Embedded Workbench 7.3\stm8\LIB\dlstm8sln.h"
+#        -lcN "D:\秦东\test1\wifi-uart - 10-20\Debug\List" -I
+#        "D:\秦东\test1\wifi-uart - 10-20\Gizwits\" -I "D:\秦东\test1\wifi-uart
+#        - 10-20\Utils\" --vregs 16
+#    List file    =  D:\秦东\test1\wifi-uart - 10-20\Debug\List\ringbuffer.lst
+#    Object file  =  D:\秦东\test1\wifi-uart - 10-20\Debug\Obj\ringbuffer.o
+#
+###############################################################################
+
+D:\秦东\test1\wifi-uart - 10-20\Utils\ringbuffer.c
+      1          /**
+      2          ************************************************************
+      3          * @file         ringbuffer.c
+      4          * @brief        Loop buffer processing
+      5          * @author       Gizwits
+      6          * @date         2017-07-19
+      7          * @version      V03030000
+      8          * @copyright    Gizwits
+      9          *
+     10          * @note         Gizwits is only for smart hardware
+     11          *               Gizwits Smart Cloud for Smart Products
+     12          *               Links | Value Added | Open | Neutral | Safety | Own | Free | Ecology
+     13          *               www.gizwits.com
+     14          *
+     15          ***********************************************************/
+     16          #include "ringBuffer.h"
+     17          #include "common.h"
+     18          
+     19          int8_t ICACHE_FLASH_ATTR rbCreate(rb_t* rb)
+     20          {
+     21              if(NULL == rb)
+     22              {
+     23                  return -1;
+     24              }
+     25          
+     26              rb->rbHead = rb->rbBuff;
+     27              rb->rbTail = rb->rbBuff;
+     28              return 0;
+     29          }
+     30          
+     31          int8_t ICACHE_FLASH_ATTR rbDelete(rb_t* rb)
+     32          {
+     33              if(NULL == rb)
+     34              {
+     35                  return -1;
+     36              }
+     37          
+     38              rb->rbBuff = NULL;
+     39              rb->rbHead = NULL;
+     40              rb->rbTail = NULL;
+     41              rb->rbCapacity = 0;
+     42          		return 0;
+     43          }
+     44          
+     45          int32_t ICACHE_FLASH_ATTR rbCapacity(rb_t *rb)
+     46          {
+     47              if(NULL == rb)
+     48              {
+     49                  return -1;
+     50              }
+     51          
+     52              return rb->rbCapacity;
+     53          }
+     54          
+     55          int32_t ICACHE_FLASH_ATTR rbCanRead(rb_t *rb)
+     56          {
+     57              if(NULL == rb)
+     58              {
+     59                  return -1;
+     60              }
+     61          
+     62              if (rb->rbHead == rb->rbTail)
+     63              {
+     64                  return 0;
+     65              }
+     66          
+     67              if (rb->rbHead < rb->rbTail)
+     68              {
+     69                  return rb->rbTail - rb->rbHead;
+     70              }
+     71          
+     72              return rbCapacity(rb) - (rb->rbHead - rb->rbTail);
+     73          }
+     74          
+     75          int32_t ICACHE_FLASH_ATTR rbCanWrite(rb_t *rb)
+     76          {
+     77              if(NULL == rb)
+     78              {
+     79                  return -1;
+     80              }
+     81          
+     82              return rbCapacity(rb) - rbCanRead(rb);
+     83          }
+     84          
+     85          int32_t ICACHE_FLASH_ATTR rbRead(rb_t *rb, void *data, size_t count)
+     86          {
+     87              int copySz = 0;
+     88          
+     89              if(NULL == rb)
+     90              {
+     91                  return -1;
+     92              }
+     93          
+     94              if(NULL == data)
+     95              {
+     96                  return -1;
+     97              }
+     98          
+     99              if (rb->rbHead < rb->rbTail)
+    100              {
+    101                  copySz = min(count, rbCanRead(rb));
+    102                  memcpy(data, rb->rbHead, copySz);
+    103                  rb->rbHead += copySz;
+    104                  return copySz;
+    105              }
+    106              else
+    107              {
+    108                  if (count < rbCapacity(rb)-(rb->rbHead - rb->rbBuff))
+    109                  {
+    110                      copySz = count;
+    111                      memcpy(data, rb->rbHead, copySz);
+    112                      rb->rbHead += copySz;
+    113                      return copySz;
+    114                  }
+    115                  else
+    116                  {
+    117                      copySz = rbCapacity(rb) - (rb->rbHead - rb->rbBuff);
+    118                      memcpy(data, rb->rbHead, copySz);
+    119                      rb->rbHead = rb->rbBuff;
+    120                      copySz += rbRead(rb, (char*)data+copySz, count-copySz);
+    121                      return copySz;
+    122                  }
+    123              }
+    124          }
+    125          
+    126          int32_t ICACHE_FLASH_ATTR rbWrite(rb_t *rb, const void *data, size_t count)
+    127          {
+    128              int tailAvailSz = 0;
+    129          
+    130              if((NULL == rb)||(NULL == data))
+    131              {
+    132                  return -1;
+    133              }
+    134          
+    135              if (count >= rbCanWrite(rb))
+    136              {
+    137                  return -2;
+    138              }
+    139          
+    140              if (rb->rbHead <= rb->rbTail)
+    141              {
+    142                  tailAvailSz = rbCapacity(rb) - (rb->rbTail - rb->rbBuff);
+    143                  if (count <= tailAvailSz)
+    144                  {
+    145                      memcpy(rb->rbTail, data, count);
+    146                      rb->rbTail += count;
+    147                      if (rb->rbTail == rb->rbBuff+rbCapacity(rb))
+    148                      {
+    149                          rb->rbTail = rb->rbBuff;
+    150                      }
+    151                      return count;
+    152                  }
+    153                  else
+    154                  {
+    155                      memcpy(rb->rbTail, data, tailAvailSz);
+    156                      rb->rbTail = rb->rbBuff;
+    157          
+    158                      return tailAvailSz + rbWrite(rb, (char*)data+tailAvailSz, count-tailAvailSz);
+    159                  }
+    160              }
+    161              else
+    162              {
+    163                  memcpy(rb->rbTail, data, count);
+    164                  rb->rbTail += count;
+    165                  return count;
+    166              }
+    167          }
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+     373  rbCanRead
+      68  rbCanWrite
+      50  rbCapacity
+     165  rbCreate
+     165  rbDelete
+     817  rbRead
+     856  rbWrite
+
+ 
+ 2 494 bytes in section .near_func.text
+ 
+ 2 494 bytes of CODE memory
+
+Errors: none
+Warnings: 1

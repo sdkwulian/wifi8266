@@ -1,0 +1,367 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V2.20.1.176 for STM8                 16/Nov/2017  19:21:02
+# Copyright 2010-2015 IAR Systems AB.
+# Standalone license - IAR Embedded Workbench for STMicroelectronics STM8
+#
+#    Source file  =  D:\秦东\test1\wifi-uart - 10-20\Utils\common.c
+#    Command line =  
+#        "D:\秦东\test1\wifi-uart - 10-20\Utils\common.c" -e -Ol --no_cse
+#        --no_unroll --no_inline --no_code_motion --no_tbaa --no_cross_call
+#        --debug --code_model small --data_model large -o
+#        "D:\秦东\test1\wifi-uart - 10-20\Debug\Obj" --dlib_config "D:\Program
+#        Files (x86)\IAR Systems\Embedded Workbench 7.3\stm8\LIB\dlstm8sln.h"
+#        -lcN "D:\秦东\test1\wifi-uart - 10-20\Debug\List" -I
+#        "D:\秦东\test1\wifi-uart - 10-20\Gizwits\" -I "D:\秦东\test1\wifi-uart
+#        - 10-20\Utils\" --vregs 16
+#    List file    =  D:\秦东\test1\wifi-uart - 10-20\Debug\List\common.lst
+#    Object file  =  D:\秦东\test1\wifi-uart - 10-20\Debug\Obj\common.o
+#
+###############################################################################
+
+D:\秦东\test1\wifi-uart - 10-20\Utils\common.c
+      1          /**
+      2          ************************************************************
+      3          * @file         common.c
+      4          * @brief        Generic tools
+      5          * @author       Gizwits
+      6          * @date         2017-07-19
+      7          * @version      V03030000
+      8          * @copyright    Gizwits
+      9          *
+     10          * @note         Gizwits is only for smart hardware
+     11          *               Gizwits Smart Cloud for Smart Products
+     12          *               Links | Value Added | Open | Neutral | Safety | Own | Free | Ecology
+     13          *               www.gizwits.com
+     14          *
+     15          ***********************************************************/
+     16          #include "common.h"
+     17          
+     18          /**
+     19          * @brief Checksum calculation
+     20          *
+     21          * @param [in] buf   : data 
+     22          * @param [in] len   : data len
+     23          *
+     24          * @return sum : Checksum
+     25          */
+     26          uint8_t ICACHE_FLASH_ATTR gizProtocolSum(uint8_t *buf, uint32_t len)
+     27          {
+     28              uint8_t     sum = 0;
+     29              uint32_t    i = 0;
+     30          
+     31              if(buf == NULL || len <= 0)
+     32              {
+     33                  return 0;
+     34              }
+     35          
+     36              for(i=2; i<len-1; i++)
+     37              {
+     38                  sum += buf[i];
+     39              }
+     40          
+     41              return sum;
+     42          }
+     43          
+     44          /**
+     45           * htons unsigned short -> Network byte order
+     46           * ntohs Network byte order -> unsigned short
+     47           */
+     48          uint16_t ICACHE_FLASH_ATTR exchangeBytes(uint16_t value)
+     49          {
+     50              uint16_t tmp_value;
+     51              uint8_t *index_1, *index_2;
+     52          
+     53              index_1 = (uint8_t *)&tmp_value;
+     54              index_2 = (uint8_t *)&value;
+     55          
+     56              *index_1 = *(index_2+1);
+     57              *(index_1+1) = *index_2;
+     58          
+     59              return tmp_value;
+     60          }
+     61          
+     62          /**
+     63           * htonl unsigned long  -> Network byte order
+     64           * ntohl Network byte order -> unsigned long
+     65           */
+     66          uint32_t ICACHE_FLASH_ATTR exchangeWord(uint32_t value)
+     67          {
+     68              return ((value & 0x000000FF) << 24) |
+     69                     ((value & 0x0000FF00) << 8) |
+     70                     ((value & 0x00FF0000) >> 8) |
+     71                     ((value & 0xFF000000) >> 24) ;
+     72          }
+     73          
+     74          /**
+     75          * @brief Character to binary
+     76          * @param[in]   A  : Character A
+     77          * @param[out]  B  : Character B
+     78          * @return     : Accounting for one byte of binary data
+     79          */
+     80          uint8_t ICACHE_FLASH_ATTR char2hex(char A , char B)
+     81          {
+     82              uint8_t a ,b = 0;
+     83              if(A>='0'&&A<='9')
+     84              {
+     85                  a=A-'0';
+     86              }
+     87              else if(A>='A' && A<='F')
+     88              {
+     89                  a=A-'A'+10;
+     90              }
+     91              else if(A>='a' && A<='f')
+     92              {
+     93                  a=A-'a'+10;
+     94              }
+     95          
+     96              if(B>='0'&&B<='9')
+     97              {
+     98                  b=B-'0';
+     99              }
+    100              else if(B>='A' && B<='F')
+    101              {
+    102                  b=B-'A'+10;
+    103              }
+    104              else if( B>='a' && B<='f')
+    105              {
+    106                  b=B-'a'+10;
+    107              }
+    108          
+    109              return (a<<4)+b;
+    110          }
+    111          
+    112          /**
+    113          * @brief checkStringIsNotZero
+    114          
+    115          * Check String Is Zero ,Or Not
+    116          
+    117          * @param[in]    : String
+    118          * @param[out]   :
+    119          * @return       : 0,String Not All Zero
+    120          *                -1,Input Illegal
+    121          *                 1,String All Zero
+    122          */
+    123          int8_t ICACHE_FLASH_ATTR checkStringIsNotZero(const char *data)
+    124          {
+    125              uint32_t i = 0;
+    126              uint32_t dataLen = 0;
+    127          
+    128              dataLen = gizStrlen(data);
+    129          
+    130              if(NULL == data)
+    131              {
+    132                  return -1;
+    133              }
+    134          
+    135              for(i=0; i<dataLen; i++)
+    136              {
+    137                  if(data[i] != '0')
+    138                  {
+    139                      return 0;
+    140                  }
+    141              }
+    142          
+    143              return 1;
+    144          }
+    145          
+    146          /**
+    147          * @brief Calculate week date
+    148          
+    149          * Calculate the day of the week based on the date
+    150          
+    151          * @param [in] iYear   
+    152          * @param [in] iMonth   
+    153          * @param [in] iDay  
+    154          *
+    155          * @return sum : Checksum
+    156          */
+    157          int ICACHE_FLASH_ATTR returnWeekDay(unsigned int iYear, unsigned int iMonth, unsigned int iDay)
+    158          {
+    159              int iWeek = 0;
+    160              unsigned int y = 0, c = 0, m = 0, d = 0;
+    161          
+    162              if (iMonth == 1 || iMonth == 2)
+    163              {
+    164                  c = (iYear - 1) / 100;
+    165                  y = (iYear - 1) % 100;
+    166                  m = iMonth + 12;
+    167                  d = iDay;
+    168              }
+    169              else
+    170              {
+    171                  c = iYear / 100;
+    172                  y = iYear % 100;
+    173                  m = iMonth;
+    174                  d = iDay;
+    175              }
+    176          
+    177              iWeek = y + y / 4 + c / 4 - 2 * c + 26 * (m + 1) / 10 + d - 1;
+    178              iWeek = iWeek >= 0 ? (iWeek % 7) : (iWeek % 7 + 7);
+    179          
+    180              return iWeek;
+    181          }
+    182          
+    183          static int ICACHE_FLASH_ATTR isleap(int year)
+    184          {
+    185              return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+    186          }
+    187          
+    188          static int ICACHE_FLASH_ATTR get_yeardays(int year)
+    189          {
+    190              if (isleap(year))
+    191                  return 366;
+    192              return 365;
+    193          }
+    194          
+    195          /**
+    196          * @brief Calculate time zone time
+    197          
+    198          * Will be the time of the current time zone of Greenwich time
+    199          
+    200          * @param [in] Ntp: time of Greenwich
+    201          *
+    202          * @return sum : Back to the wall time structure
+    203          */
+    204          gizTime_t ICACHE_FLASH_ATTR returnNtp2Wt(uint32_t ntp)
+    205          {
+    206              gizTime_t tm;
+    207              int x;
+    208              int i=1970, mons[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    209              uint32_t utc = ntp;
+    210          
+    211              /* utc + timezone */
+    212              utc += TIMEZONE_DEFAULT * ONE_HOUR;
+    213          
+    214              for(i=1970; utc>0;)
+    215              {
+    216                  x=get_yeardays(i);
+    217                  if(utc >= x*DAY_SEC)
+    218                  {
+    219                      utc -= x*DAY_SEC;
+    220                      i++;
+    221                  }
+    222                  else
+    223                  {
+    224                      break;
+    225                  }
+    226              }
+    227              tm.year = i;
+    228          
+    229              for(i=0; utc>0;)
+    230              {
+    231                  if (isleap(tm.year))
+    232                      mons[1]=29;
+    233                  if(utc >= mons[i]*DAY_SEC)
+    234                  {
+    235                      utc -= mons[i]*DAY_SEC;
+    236                      i++;
+    237                  }
+    238                  else
+    239                  {
+    240                      break;
+    241                  }
+    242              }
+    243              mons[1]=28;
+    244              tm.month = i+1;
+    245          
+    246              for(i=1; utc>0;)
+    247              {
+    248                  if(utc >= DAY_SEC)
+    249                  {
+    250                      utc -= DAY_SEC;
+    251                      i++;
+    252                  }
+    253                  else
+    254                  {
+    255                      break;
+    256                  }
+    257              }
+    258              tm.day=i;
+    259          
+    260              tm.hour = utc/(60*60);
+    261              tm.minute = utc%(60*60)/60;
+    262              tm.second = utc%60;
+    263              tm.ntp = ntp;
+    264          
+    265              return tm;
+    266          }
+    267          
+    268          /**
+    269          * @brief String conversion binary
+    270          * @param[in]   pbSrc    : String 
+    271          * @param[in]   nLen    : String length 
+    272          * @param[out]  pbDest   : binary 
+    273          */
+    274          void ICACHE_FLASH_ATTR str2Hex(char *pbDest, char *pbSrc, int nLen)
+    275          {
+    276              char h1,h2;
+    277              char s1,s2;
+    278              int i;
+    279          
+    280              for (i=0; i<nLen; i++)
+    281              {
+    282                  h1 = pbSrc[2*i];
+    283                  h2 = pbSrc[2*i+1];
+    284          
+    285                  s1 = toupper(h1) - 0x30;
+    286                  if (s1 > 9)
+    287                      s1 -= 7;
+    288          
+    289                  s2 = toupper(h2) - 0x30;
+    290                  if (s2 > 9)
+    291                      s2 -= 7;
+    292          
+    293                  pbDest[i] = s1*16 + s2;
+    294              }
+    295          }
+    296          
+    297          /**
+    298          * @brief Binary conversion string
+    299          * @param[in]   pbSrc    : Binary data 
+    300          * @param[in]   nLen    : Binary length 
+    301          * @param[out]  pbDest   : Character 
+    302          */
+    303          void ICACHE_FLASH_ATTR hex2Str(unsigned char *pbDest, unsigned char *pbSrc, int nLen)
+    304          {
+    305              char	ddl,ddh;
+    306              int i;
+    307          
+    308              for (i=0; i<nLen; i++) {
+    309                  ddh = 0x30 + pbSrc[i] / 16;
+    310                  ddl = 0x30 + pbSrc[i] % 16;
+    311                  if (ddh > 0x39) ddh = ddh + 7;
+    312                  if (ddl > 0x39) ddl = ddl + 7;
+    313                  pbDest[i*2] = ddh;
+    314                  pbDest[i*2+1] = ddl;
+    315              }
+    316          
+    317              pbDest[nLen*2] = '\0';
+    318          }
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      24  ?_0
+     104  char2hex
+     108  checkStringIsNotZero
+      65  exchangeBytes
+      90  exchangeWord
+      14  get_yeardays
+     113  gizProtocolSum
+     169  hex2Str
+      49  isleap
+     421  returnNtp2Wt
+     224  returnWeekDay
+     166  str2Hex
+
+ 
+    24 bytes in section .far.rodata
+ 1 523 bytes in section .near_func.text
+ 
+ 1 523 bytes of CODE  memory
+    24 bytes of CONST memory
+
+Errors: none
+Warnings: 7

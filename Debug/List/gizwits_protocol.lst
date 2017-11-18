@@ -1,0 +1,1498 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V2.20.1.176 for STM8                 16/Nov/2017  19:26:11
+# Copyright 2010-2015 IAR Systems AB.
+# Standalone license - IAR Embedded Workbench for STMicroelectronics STM8
+#
+#    Source file  =  D:\�ض�\test1\wifi-uart - 10-20\Gizwits\gizwits_protocol.c
+#    Command line =  
+#        "D:\�ض�\test1\wifi-uart - 10-20\Gizwits\gizwits_protocol.c" -e -Ol
+#        --no_cse --no_unroll --no_inline --no_code_motion --no_tbaa
+#        --no_cross_call --debug --code_model small --data_model large -o
+#        "D:\�ض�\test1\wifi-uart - 10-20\Debug\Obj" --dlib_config "D:\Program
+#        Files (x86)\IAR Systems\Embedded Workbench 7.3\stm8\LIB\dlstm8sln.h"
+#        -lcN "D:\�ض�\test1\wifi-uart - 10-20\Debug\List" -I
+#        "D:\�ض�\test1\wifi-uart - 10-20\Gizwits\" -I "D:\�ض�\test1\wifi-uart
+#        - 10-20\Utils\" --vregs 16
+#    List file    =  
+#        D:\�ض�\test1\wifi-uart - 10-20\Debug\List\gizwits_protocol.lst
+#    Object file  =  
+#        D:\�ض�\test1\wifi-uart - 10-20\Debug\Obj\gizwits_protocol.o
+#
+###############################################################################
+
+D:\�ض�\test1\wifi-uart - 10-20\Gizwits\gizwits_protocol.c
+      1          /**
+      2          ************************************************************
+      3          * @file         gizwits_protocol.c
+      4          * @brief        Corresponding gizwits_product.c header file (including product hardware and software version definition)
+      5          * @author       Gizwits
+      6          * @date         2017-07-19
+      7          * @version      V03030000
+      8          * @copyright    Gizwits
+      9          * 
+     10          * @note         机智云.只为智能硬件而生
+     11          *               Gizwits Smart Cloud  for Smart Products
+     12          *               链接|增值ֵ|开放|中立|安全|自有|自由|生态
+     13          *               www.gizwits.com
+     14          *
+     15          ***********************************************************/
+     16          #include "ringBuffer.h"
+     17          #include "gizwits_product.h"
+     18          #include "dataPointTools.h"
+     19          
+     20          /** Protocol global variables **/
+     21          gizwitsProtocol_t gizwitsProtocol;
+     22          
+     23          
+     24          /**@name The serial port receives the ring buffer implementation
+     25          * @{
+     26          */
+     27          rb_t pRb;                                               ///< Ring buffer structure variable
+     28          static uint8_t rbBuf[RB_MAX_LEN];                       ///< Ring buffer data cache buffer
+     29          
+     30          
+     31          /**@} */
+     32          
+     33          /**
+     34          * @brief Write data to the ring buffer
+     35          * @param [in] buf        : buf adress
+     36          * @param [in] len        : byte length
+     37          * @return   correct : Returns the length of the written data
+     38                      failure : -1
+     39          */
+     40          int32_t gizPutData(uint8_t *buf, uint32_t len)
+     41          {
+     42              int32_t count = 0;
+     43          
+     44              if(NULL == buf)
+     45              {
+     46                  //GIZWITS_LOG("ERR: gizPutData buf is empty \n");
+     47                  return -1;
+     48              }
+     49          
+     50              count = rbWrite(&pRb, buf, len);
+     51              if(count != len)
+     52              {
+     53                  //GIZWITS_LOG("ERR: Failed to rbWrite \n");
+     54                  return -1;
+     55              }
+     56          
+     57              return count;
+     58          }
+     59          
+     60          
+     61          
+     62          /**
+     63          * @brief Protocol header initialization
+     64          *
+     65          * @param [out] head         : Protocol header pointer
+     66          *
+     67          * @return 0， success; other， failure    
+     68          */
+     69          static int8_t gizProtocolHeadInit(protocolHead_t *head)
+     70          {
+     71              if(NULL == head)
+     72              {
+     73                  //GIZWITS_LOG("ERR: gizProtocolHeadInit head is empty \n");
+     74                  return -1;
+     75              }
+     76          
+     77              memset((uint8_t *)head, 0, sizeof(protocolHead_t));
+     78              head->head[0] = 0xFF;
+     79              head->head[1] = 0xFF;
+     80          
+     81              return 0;
+     82          }
+     83          
+     84          /**
+     85          * @brief Protocol ACK check processing function
+     86          *
+     87          * @param [in] data            : data adress
+     88          * @param [in] len             : data length
+     89          *
+     90          * @return 0， suceess; other， failure
+     91          */
+     92          static int8_t gizProtocolWaitAck(uint8_t *gizdata, uint32_t len)
+     93          {
+     94              if(NULL == gizdata)
+     95              {
+     96                  //GIZWITS_LOG("ERR: data is empty \n");
+     97                  return -1;
+     98              }
+     99          
+    100              memset((uint8_t *)&gizwitsProtocol.waitAck, 0, sizeof(protocolWaitAck_t));
+    101              memcpy((uint8_t *)gizwitsProtocol.waitAck.buf, gizdata, len);
+    102              gizwitsProtocol.waitAck.dataLen = (uint16_t)len;
+    103              
+    104              gizwitsProtocol.waitAck.flag = 1;
+    105              gizwitsProtocol.waitAck.sendTime = gizGetTimerCount();
+    106          
+    107              return 0;
+    108          }
+    109          /**
+    110          * @brief generates "controlled events" according to protocol
+    111          
+    112          * @param [in] issuedData: Controlled data
+    113          * @param [out] info: event queue
+    114          * @param [out] dataPoints: data point data
+    115          * @return 0, the implementation of success, non-0, failed
+    116          */
+    117          static int8_t ICACHE_FLASH_ATTR gizDataPoint2Event(gizwitsIssued_t *issuedData, eventInfo_t *info, dataPoint_t *dataPoints)
+    118          {
+    119              if((NULL == issuedData) || (NULL == info) ||(NULL == dataPoints))
+    120              {
+    121                  //GIZWITS_LOG("gizDataPoint2Event Error , Illegal Param\n");
+    122                  return -1;
+    123              }
+    124              
+    125              /** Greater than 1 byte to do bit conversion **/
+    126              if(sizeof(issuedData->attrFlags) > 1)
+    127              {
+    128                  if(-1 == gizByteOrderExchange((uint8_t *)&issuedData->attrFlags,sizeof(attrFlags_t)))
+    129                  {
+    130                      //GIZWITS_LOG("gizByteOrderExchange Error\n");
+    131                      return -1;
+    132                  }
+    133              }
+    134              
+    135              if(0x01 == issuedData->attrFlags.flagHeater)
+    136              {
+    137                  info->event[info->num] = EVENT_Heater;
+    138                  info->num++;
+    139                  dataPoints->valueHeater = gizStandardDecompressionValue(Heater_BYTEOFFSET,Heater_BITOFFSET,Heater_LEN,(uint8_t *)&issuedData->attrVals.wBitBuf,sizeof(issuedData->attrVals.wBitBuf));
+    140              }
+    141                  
+    142              if(0x01 == issuedData->attrFlags.flagBubble)
+    143              {
+    144                  info->event[info->num] = EVENT_Bubble;
+    145                  info->num++;
+    146                  dataPoints->valueBubble = gizStandardDecompressionValue(Bubble_BYTEOFFSET,Bubble_BITOFFSET,Bubble_LEN,(uint8_t *)&issuedData->attrVals.wBitBuf,sizeof(issuedData->attrVals.wBitBuf));
+    147              }
+    148                  
+    149              if(0x01 == issuedData->attrFlags.flagFilter)
+    150              {
+    151                  info->event[info->num] = EVENT_Filter;
+    152                  info->num++;
+    153                  dataPoints->valueFilter = gizStandardDecompressionValue(Filter_BYTEOFFSET,Filter_BITOFFSET,Filter_LEN,(uint8_t *)&issuedData->attrVals.wBitBuf,sizeof(issuedData->attrVals.wBitBuf));
+    154              }
+    155                  
+    156              if(0x01 == issuedData->attrFlags.flagO3)
+    157              {
+    158                  info->event[info->num] = EVENT_O3;
+    159                  info->num++;
+    160                  dataPoints->valueO3 = gizStandardDecompressionValue(O3_BYTEOFFSET,O3_BITOFFSET,O3_LEN,(uint8_t *)&issuedData->attrVals.wBitBuf,sizeof(issuedData->attrVals.wBitBuf));
+    161              }
+    162                  
+    163                  
+    164              if(0x01 == issuedData->attrFlags.flagTemperature_setup)
+    165              {
+    166                  info->event[info->num] = EVENT_Temperature_setup;
+    167                  info->num++;
+    168                  dataPoints->valueTemperature_setup = gizX2Y(Temperature_setup_RATIO,  Temperature_setup_ADDITION, issuedData->attrVals.valueTemperature_setup); 
+    169              }
+    170                  
+    171              if(0x01 == issuedData->attrFlags.flagTiming)
+    172              {
+    173                  info->event[info->num] = EVENT_Timing;
+    174                  info->num++;
+    175                  dataPoints->valueTiming = gizX2Y(Timing_RATIO,  Timing_ADDITION, exchangeBytes(issuedData->attrVals.valueTiming));
+    176              }
+    177              
+    178              return 0;
+    179          }
+    180          
+    181          /**
+    182          * @brief contrasts the current data with the last data
+    183          *
+    184          * @param [in] cur: current data point data
+    185          * @param [in] last: last data point data
+    186          *
+    187          * @return: 0, no change in data; 1, data changes
+    188          */
+    189          static int8_t ICACHE_FLASH_ATTR gizCheckReport(dataPoint_t *cur, dataPoint_t *last)
+    190          {
+    191              int8_t ret = 0;
+    192              static uint32_t lastReportTime = 0;
+    193          
+    194              if((NULL == cur) || (NULL == last))
+    195              {
+    196                  //GIZWITS_LOG("gizCheckReport Error , Illegal Param\n");
+    197                  return -1;
+    198              }
+    199              if(last->valueHeater != cur->valueHeater)
+    200              {
+    201                  //GIZWITS_LOG("valueHeater Changed\n");
+    202                  ret = 1;
+    203              }
+    204              if(last->valueBubble != cur->valueBubble)
+    205              {
+    206                  //GIZWITS_LOG("valueBubble Changed\n");
+    207                  ret = 1;
+    208              }
+    209              if(last->valueFilter != cur->valueFilter)
+    210              {
+    211                  //GIZWITS_LOG("valueFilter Changed\n");
+    212                  ret = 1;
+    213              }
+    214              if(last->valueO3 != cur->valueO3)
+    215              {
+    216                  //GIZWITS_LOG("valueO3 Changed\n");
+    217                  ret = 1;
+    218              }
+    219              if(last->valueTemperature_setup != cur->valueTemperature_setup)
+    220              {
+    221                  //GIZWITS_LOG("valueTemperature_setup Changed\n");
+    222                  ret = 1;
+    223              }
+    224              if(last->valueTiming != cur->valueTiming)
+    225              {
+    226                  //GIZWITS_LOG("valueTiming Changed\n");
+    227                  ret = 1;
+    228              }
+    229              if(last->valueOvertime_filter != cur->valueOvertime_filter)
+    230              {
+    231                  //GIZWITS_LOG("valueOvertime_filter Changed\n");
+    232                  ret = 1;
+    233              }
+    234              if(last->valueSuperheat != cur->valueSuperheat)
+    235              {
+    236                  //GIZWITS_LOG("valueSuperheat Changed\n");
+    237                  ret = 1;
+    238              }
+    239              if(last->valueUndercooling != cur->valueUndercooling)
+    240              {
+    241                  //GIZWITS_LOG("valueUndercooling Changed\n");
+    242                  ret = 1;
+    243              }
+    244          
+    245              if(last->valueTime_filter != cur->valueTime_filter)
+    246              {
+    247                  if(gizGetTimerCount()-lastReportTime >= REPORT_TIME_MAX)
+    248                  {
+    249                      //GIZWITS_LOG("valueTime_filter Changed\n");
+    250                      lastReportTime = gizGetTimerCount();
+    251                      ret = 1;
+    252                  }
+    253              }
+    254          
+    255              return ret;
+    256          }
+    257          
+    258          /**
+    259          * @brief User data point data is converted to wit the cloud to report data point data
+    260          *
+    261          * @param [in] dataPoints: user data point data address
+    262          * @param [out] devStatusPtr: wit the cloud data point data address
+    263          *
+    264          * @return 0, the correct return; -1, the error returned
+    265          */
+    266          static int8_t ICACHE_FLASH_ATTR gizDataPoints2ReportData(dataPoint_t *dataPoints , devStatus_t *devStatusPtr)
+    267          {
+    268              if((NULL == dataPoints) || (NULL == devStatusPtr))
+    269              {
+    270                  //GIZWITS_LOG("gizDataPoints2ReportData Error , Illegal Param\n");
+    271                  return -1;
+    272              }
+    273          
+    274              gizMemset((uint8_t *)devStatusPtr->wBitBuf,0,sizeof(devStatusPtr->wBitBuf));
+    275              gizMemset((uint8_t *)devStatusPtr->alertBitBuf,0,sizeof(devStatusPtr->alertBitBuf));
+    276          
+    277              gizStandardCompressValue(Heater_BYTEOFFSET,Heater_BITOFFSET,Heater_LEN,(uint8_t *)devStatusPtr,dataPoints->valueHeater);
+    278              gizStandardCompressValue(Bubble_BYTEOFFSET,Bubble_BITOFFSET,Bubble_LEN,(uint8_t *)devStatusPtr,dataPoints->valueBubble);
+    279              gizStandardCompressValue(Filter_BYTEOFFSET,Filter_BITOFFSET,Filter_LEN,(uint8_t *)devStatusPtr,dataPoints->valueFilter);
+    280              gizStandardCompressValue(O3_BYTEOFFSET,O3_BITOFFSET,O3_LEN,(uint8_t *)devStatusPtr,dataPoints->valueO3);
+    281              gizStandardCompressValue(Overtime_filter_BYTEOFFSET,Overtime_filter_BITOFFSET,Overtime_filter_LEN,(uint8_t *)devStatusPtr,dataPoints->valueOvertime_filter);
+    282              gizStandardCompressValue(Superheat_BYTEOFFSET,Superheat_BITOFFSET,Superheat_LEN,(uint8_t *)devStatusPtr,dataPoints->valueSuperheat);
+    283              gizStandardCompressValue(Undercooling_BYTEOFFSET,Undercooling_BITOFFSET,Undercooling_LEN,(uint8_t *)devStatusPtr,dataPoints->valueUndercooling);
+    284              gizByteOrderExchange((uint8_t *)devStatusPtr->wBitBuf,sizeof(devStatusPtr->wBitBuf));
+    285              gizByteOrderExchange((uint8_t *)devStatusPtr->alertBitBuf,sizeof(devStatusPtr->alertBitBuf));
+    286          
+    287              devStatusPtr->valueTemperature_setup = gizY2X(Temperature_setup_RATIO,  Temperature_setup_ADDITION, dataPoints->valueTemperature_setup); 
+    288          
+    289              devStatusPtr->valueTiming = exchangeBytes(gizY2X(Timing_RATIO,  Timing_ADDITION, dataPoints->valueTiming)); 
+    290              devStatusPtr->valueTime_filter = exchangeBytes(gizY2X(Time_filter_RATIO,  Time_filter_ADDITION, dataPoints->valueTime_filter)); 
+    291          
+    292          
+    293          
+    294              return 0;
+    295          }
+    296          
+    297          
+    298          /**
+    299          * @brief This function is called by the Gagent module to receive the relevant protocol data from the cloud or APP
+    300          * @param [in] inData The protocol data entered
+    301          * @param [in] inLen Enter the length of the data
+    302          * @param [out] outData The output of the protocol data
+    303          * @param [out] outLen The length of the output data
+    304          * @return 0, the implementation of success, non-0, failed
+    305          */
+    306          static int8_t gizProtocolIssuedProcess(char *did, uint8_t *inData, uint32_t inLen, uint8_t *outData, uint32_t *outLen)
+    307          {
+    308              uint8_t issuedAction = inData[0];
+    309          
+    310              if((NULL == inData)||(NULL == outData)||(NULL == outLen))
+    311              {
+    312                  //GIZWITS_LOG("gizProtocolIssuedProcess Error , Illegal Param\n");
+    313                  return -1;
+    314              }
+    315              
+    316              if(NULL == did)
+    317              {
+    318                  memset((uint8_t *)&gizwitsProtocol.issuedProcessEvent, 0, sizeof(eventInfo_t));
+    319                  switch(issuedAction)
+    320                  {
+    321                      case ACTION_CONTROL_DEVICE:
+    322                          gizDataPoint2Event((gizwitsIssued_t *)&inData[1], &gizwitsProtocol.issuedProcessEvent,&gizwitsProtocol.gizCurrentDataPoint);
+    323                          gizwitsProtocol.issuedFlag = ACTION_CONTROL_TYPE;
+    324                          outData = NULL;
+    325                          *outLen = 0;
+    326                          break;
+    327                      
+    328                      case ACTION_READ_DEV_STATUS:
+    329                          if(0 == gizDataPoints2ReportData(&gizwitsProtocol.gizLastDataPoint,&gizwitsProtocol.reportData.devStatus))
+    330                          {
+    331                              memcpy(outData+1, (uint8_t *)&gizwitsProtocol.reportData.devStatus, sizeof(gizwitsReport_t));
+    332                              outData[0] = ACTION_READ_DEV_STATUS_ACK;
+    333                              *outLen = sizeof(gizwitsReport_t)+1;
+    334                          }
+    335                          else
+    336                          {
+    337                              return -1;
+    338                          }
+    339                          break;
+    340                      case ACTION_W2D_TRANSPARENT_DATA:
+    341                          memcpy(gizwitsProtocol.transparentBuff, &inData[1], inLen-1);
+    342                          gizwitsProtocol.transparentLen = inLen - 1;
+    343                          
+    344                          gizwitsProtocol.issuedProcessEvent.event[gizwitsProtocol.issuedProcessEvent.num] = TRANSPARENT_DATA;
+    345                          gizwitsProtocol.issuedProcessEvent.num++;
+    346                          gizwitsProtocol.issuedFlag = ACTION_W2D_TRANSPARENT_TYPE;
+    347                          outData = NULL;
+    348                          *outLen = 0;
+    349                          break;
+    350                      
+    351                          default:
+    352                              break;
+    353                  }
+    354              }
+    355          
+    356              return 0;
+    357          }
+    358          /**
+    359          * @brief The protocol sends data back , P0 ACK
+    360          *
+    361          * @param [in] head                  : Protocol head pointer
+    362          * @param [in] data                  : Payload data 
+    363          * @param [in] len                   : Payload data length
+    364          * @param [in] proFlag               : DID flag ,1 for Virtual sub device did ,0 for single product or gateway 
+    365          *
+    366          * @return : 0,Ack success;
+    367          *           -1，Input Param Illegal
+    368          *           -2，Serial send faild
+    369          */
+    370          static int32_t gizProtocolIssuedDataAck(protocolHead_t *head, uint8_t *gizdata, uint32_t len, uint8_t proFlag)
+    371          {
+    372              int32_t ret = 0;
+    373              uint8_t tx_buf[RB_MAX_LEN];
+    374              uint32_t offset = 0;
+    375              uint8_t sDidLen = 0;
+    376              uint16_t data_len = 0;
+    377          	uint8_t *pTxBuf = tx_buf;
+    378              if(NULL == gizdata)
+    379              {
+    380                  //GIZWITS_LOG("[ERR]  data Is Null \n");
+    381                  return -1;
+    382              }
+    383              
+    384          
+    385              if(0x1 == proFlag)
+    386              {
+    387                  sDidLen = *((uint8_t *)head + sizeof(protocolHead_t));
+    388                  data_len = 5 + 1 + sDidLen + len;   
+    389              }
+    390              else
+    391              {
+    392                  data_len = 5 + len;
+    393              }
+    394              //GIZWITS_LOG("len = %d , sDidLen = %d ,data_len = %d\n", len,sDidLen,data_len);
+    395              *pTxBuf ++= 0xFF;
+    396              *pTxBuf ++= 0xFF;
+    397              *pTxBuf ++= (uint8_t)(data_len>>8);
+    398              *pTxBuf ++= (uint8_t)(data_len);
+    399              *pTxBuf ++= head->cmd + 1;
+    400              *pTxBuf ++= head->sn;
+    401              *pTxBuf ++= 0x00;
+    402              *pTxBuf ++= proFlag;
+    403              offset = 8;
+    404              if(0x1 == proFlag)
+    405              {
+    406                  *pTxBuf ++= sDidLen;
+    407                  offset += 1;
+    408                  memcpy(&tx_buf[offset],(uint8_t *)head+sizeof(protocolHead_t)+1,sDidLen);
+    409                  offset += sDidLen;
+    410                  pTxBuf += sDidLen;
+    411          
+    412              }
+    413              if(0 != len)
+    414              {
+    415                  memcpy(&tx_buf[offset],gizdata,len);
+    416              }
+    417              tx_buf[data_len + 4 - 1 ] = gizProtocolSum( tx_buf , (data_len+4));
+    418          
+    419              ret = uartWrite(tx_buf, data_len+4);
+    420              if(ret < 0)
+    421              {
+    422                  //GIZWITS_LOG("uart write error %d \n", ret);
+    423                  return -2;
+    424              }
+    425          
+    426              return 0;
+    427          }
+    428          
+    429          /**
+    430          * @brief Report data interface
+    431          *
+    432          * @param [in] action            : PO action
+    433          * @param [in] data              : Payload data
+    434          * @param [in] len               : Payload data length
+    435          *
+    436          * @return : 0,Ack success;
+    437          *           -1，Input Param Illegal
+    438          *           -2，Serial send faild
+    439          */
+    440          static int32_t gizReportData(uint8_t action, uint8_t *gizdata, uint32_t len)
+    441          {
+    442              int32_t ret = 0;
+    443              protocolReport_t protocolReport;
+    444          
+    445              if(NULL == gizdata)
+    446              {
+    447                  //GIZWITS_LOG("gizReportData Error , Illegal Param\n");
+    448                  return -1;
+    449              }
+    450              gizProtocolHeadInit((protocolHead_t *)&protocolReport);
+    451              protocolReport.head.cmd = CMD_REPORT_P0;
+    452              protocolReport.head.sn = gizwitsProtocol.sn++;
+    453              protocolReport.action = action;
+    454              protocolReport.head.len = exchangeBytes(sizeof(protocolReport_t)-4);
+    455              memcpy((gizwitsReport_t *)&protocolReport.reportData, (gizwitsReport_t *)gizdata,len);
+    456              protocolReport.sum = gizProtocolSum((uint8_t *)&protocolReport, sizeof(protocolReport_t));
+    457              
+    458              ret = uartWrite((uint8_t *)&protocolReport, sizeof(protocolReport_t));
+    459              if(ret < 0)
+    460              {
+    461                  //GIZWITS_LOG("ERR: uart write error %d \n", ret);
+    462                  return -2;
+    463              }
+    464          
+    465              gizProtocolWaitAck((uint8_t *)&protocolReport, sizeof(protocolReport_t));
+    466          
+    467              return ret;
+    468          }/**
+    469          * @brief Datapoints reporting mechanism
+    470          *
+    471          * 1. Changes are reported immediately
+    472          
+    473          * 2. Data timing report , 600000 Millisecond
+    474          * 
+    475          *@param [in] currentData       : Current datapoints value
+    476          * @return : NULL
+    477          */
+    478          static void gizDevReportPolicy(dataPoint_t *currentData)
+    479          {
+    480              static uint32_t lastRepTime = 0;
+    481              uint32_t timeNow = gizGetTimerCount();
+    482          
+    483              if((1 == gizCheckReport(currentData, (dataPoint_t *)&gizwitsProtocol.gizLastDataPoint)))
+    484              {
+    485                  //GIZWITS_LOG("changed, report data\n");
+    486                  if(0 == gizDataPoints2ReportData(currentData,&gizwitsProtocol.reportData.devStatus))
+    487                  {
+    488                      gizReportData(ACTION_REPORT_DEV_STATUS, (uint8_t *)&gizwitsProtocol.reportData.devStatus, sizeof(devStatus_t));        }       
+    489                  memcpy((uint8_t *)&gizwitsProtocol.gizLastDataPoint, (uint8_t *)currentData, sizeof(dataPoint_t));
+    490              }
+    491          
+    492              if((0 == (timeNow % (600000))) && (lastRepTime != timeNow))
+    493              {
+    494                  //GIZWITS_LOG("Info: 600S report data\n");
+    495                  if(0 == gizDataPoints2ReportData(currentData,&gizwitsProtocol.reportData.devStatus))
+    496                  {
+    497                      gizReportData(ACTION_REPORT_DEV_STATUS, (uint8_t *)&gizwitsProtocol.reportData.devStatus, sizeof(devStatus_t));
+    498                  }       
+    499                  memcpy((uint8_t *)&gizwitsProtocol.gizLastDataPoint, (uint8_t *)currentData, sizeof(dataPoint_t));
+    500          
+    501                  lastRepTime = timeNow;
+    502              }
+    503          }
+    504          
+    505          /**
+    506          * @brief Get a packet of data from the ring buffer
+    507          *
+    508          * @param [in]  rb                  : Input data address
+    509          * @param [out] data                : Output data address
+    510          * @param [out] len                 : Output data length
+    511          *
+    512          * @return : 0,Return correct ;-1，Return failure;-2，Data check failure
+    513          */
+    514          static int8_t gizProtocolGetOnePacket(rb_t *rb, uint8_t *gizdata, uint16_t *len)
+    515          {
+    516              int32_t ret = 0;
+    517              uint8_t sum = 0;
+    518              int32_t i = 0;
+    519              uint8_t tmpData;
+    520              uint8_t tmpLen = 0;
+    521              uint16_t tmpCount = 0;
+    522              static uint8_t protocolFlag = 0;
+    523              static uint16_t protocolCount = 0;
+    524              static uint8_t lastData = 0;
+    525              static uint8_t debugCount = 0;
+    526              uint8_t *protocolBuff = gizdata;
+    527              protocolHead_t *head = NULL;
+    528          
+    529              if((NULL == rb) || (NULL == gizdata) ||(NULL == len))
+    530              {
+    531                  //GIZWITS_LOG("gizProtocolGetOnePacket Error , Illegal Param\n");
+    532                  return -1;
+    533              }
+    534          
+    535              tmpLen = rbCanRead(rb);
+    536              if(0 == tmpLen)
+    537              {
+    538                  return -1;
+    539              }
+    540          
+    541              for(i=0; i<tmpLen; i++)
+    542              {
+    543                  ret = rbRead(rb, &tmpData, 1);
+    544                  if(0 != ret)
+    545                  {
+    546                      if((0xFF == lastData) && (0xFF == tmpData))
+    547                      {
+    548                          if(0 == protocolFlag)
+    549                          {
+    550                              protocolBuff[0] = 0xFF;
+    551                              protocolBuff[1] = 0xFF;
+    552                              protocolCount = 2;
+    553                              protocolFlag = 1;
+    554                          }
+    555                          else
+    556                          {
+    557                              if((protocolCount > 4) && (protocolCount != tmpCount))
+    558                              {
+    559                                  protocolBuff[0] = 0xFF;
+    560                                  protocolBuff[1] = 0xFF;
+    561                                  protocolCount = 2;
+    562                              }
+    563                          }
+    564                      }
+    565                      else if((0xFF == lastData) && (0x55 == tmpData))
+    566                      {
+    567                      }
+    568                      else
+    569                      {
+    570                          if(1 == protocolFlag)
+    571                          {
+    572                              protocolBuff[protocolCount] = tmpData;
+    573                              protocolCount++;
+    574          
+    575                              if(protocolCount > 4)
+    576                              {
+    577                                  head = (protocolHead_t *)protocolBuff;
+    578                                  tmpCount = exchangeBytes(head->len)+4;
+    579                                  if(protocolCount == tmpCount)
+    580                                  {
+    581                                      break;
+    582                                  }
+    583                              }
+    584                          }
+    585                      }
+    586          
+    587                      lastData = tmpData;
+    588                      debugCount++;
+    589                  }
+    590              }
+    591          
+    592              if((protocolCount > 4) && (protocolCount == tmpCount))
+    593              {
+    594                  sum = gizProtocolSum(protocolBuff, protocolCount);
+    595          
+    596                  if(protocolBuff[protocolCount-1] == sum)
+    597                  {
+    598                      memcpy(gizdata, protocolBuff, tmpCount);
+    599                      *len = tmpCount;
+    600                      protocolFlag = 0;
+    601          
+    602                      protocolCount = 0;
+    603                      debugCount = 0;
+    604                      lastData = 0;
+    605          
+    606                      return 0;
+    607                  }
+    608                  else
+    609                  {
+    610                      return -2;
+    611                  }
+    612              }
+    613          
+    614              return 1;
+    615          }
+    616          
+    617          
+    618          
+    619          /**
+    620          * @brief Protocol data resend
+    621          
+    622          * The protocol data resend when check timeout and meet the resend limiting
+    623          
+    624          * @param none    
+    625          *
+    626          * @return none
+    627          */
+    628          static void gizProtocolResendData(void)
+    629          {
+    630              int32_t ret = 0;
+    631          
+    632              if(0 == gizwitsProtocol.waitAck.flag)
+    633              {
+    634                  return;
+    635              }
+    636          
+    637              //GIZWITS_LOG("Warning: timeout, resend data \n");
+    638              
+    639              ret = uartWrite(gizwitsProtocol.waitAck.buf, gizwitsProtocol.waitAck.dataLen);
+    640              if(ret != gizwitsProtocol.waitAck.dataLen)
+    641              {
+    642                  //GIZWITS_LOG("ERR: resend data error\n");
+    643              }
+    644          
+    645              gizwitsProtocol.waitAck.sendTime = gizGetTimerCount();
+    646          }
+    647          
+    648          /**
+    649          * @brief Clear the ACK protocol message
+    650          *
+    651          * @param [in] head : Protocol header address
+    652          *
+    653          * @return 0， success; other， failure
+    654          */
+    655          static int8_t gizProtocolWaitAckCheck(protocolHead_t *head)
+    656          {
+    657              protocolHead_t *waitAckHead = (protocolHead_t *)gizwitsProtocol.waitAck.buf;
+    658          
+    659              if(NULL == head)
+    660              {
+    661                  //GIZWITS_LOG("ERR: data is empty \n");
+    662                  return -1;
+    663              }
+    664          
+    665              if(waitAckHead->cmd+1 == head->cmd)
+    666              {
+    667                  memset((uint8_t *)&gizwitsProtocol.waitAck, 0, sizeof(protocolWaitAck_t));
+    668              }
+    669          
+    670              return 0;
+    671          }
+    672          
+    673          /**
+    674          * @brief Send general protocol message data
+    675          * 
+    676          * @param [in] head              : Protocol header address
+    677          *
+    678          * @return : Return effective data length;-1，return failure
+    679          */
+    680          static int32_t gizProtocolCommonAck(protocolHead_t *head)
+    681          {
+    682              int32_t ret = 0;
+    683              protocolCommon_t ack;
+    684          
+    685              if(NULL == head)
+    686              {
+    687                  //GIZWITS_LOG("ERR: gizProtocolCommonAck data is empty \n");
+    688                  return -1;
+    689              }
+    690              memcpy((uint8_t *)&ack, (uint8_t *)head, sizeof(protocolHead_t));
+    691              ack.head.cmd = ack.head.cmd+1;
+    692              ack.head.len = exchangeBytes(sizeof(protocolCommon_t)-4);
+    693              ack.sum = gizProtocolSum((uint8_t *)&ack, sizeof(protocolCommon_t));
+    694          
+    695              ret = uartWrite((uint8_t *)&ack, sizeof(protocolCommon_t));
+    696              if(ret < 0)
+    697              {
+    698                  //GIZWITS_LOG("ERR: uart write error %d \n", ret);
+    699              }
+    700          
+    701              return ret;
+    702          }
+    703          
+    704          /**
+    705          * @brief ACK processing function
+    706          
+    707          * Time-out 200ms no ACK resend，resend two times at most
+    708          
+    709          * @param none 
+    710          *
+    711          * @return none
+    712          */
+    713          static void gizProtocolAckHandle(void)
+    714          {
+    715              if(1 == gizwitsProtocol.waitAck.flag)
+    716              {
+    717                  if(SEND_MAX_NUM > gizwitsProtocol.waitAck.num)
+    718                  {
+    719                      // Time-out no ACK resend
+    720                      if(SEND_MAX_TIME < (gizGetTimerCount() - gizwitsProtocol.waitAck.sendTime))
+    721                      {
+    722                          //GIZWITS_LOG("Warning:gizProtocolResendData %d %d %d\n", gizGetTimerCount(), gizwitsProtocol.waitAck.sendTime, gizwitsProtocol.waitAck.num);
+    723                          gizProtocolResendData();
+    724                          gizwitsProtocol.waitAck.num++;
+    725                      }
+    726                  }
+    727                  else
+    728                  {
+    729                      memset((uint8_t *)&gizwitsProtocol.waitAck, 0, sizeof(protocolWaitAck_t));
+    730                  }
+    731              }
+    732          }
+    733          
+    734          /**
+    735          * @brief Protocol 4.1 WiFi module requests device information
+    736          *
+    737          * @param[in] head : Protocol header address
+    738          *
+    739          * @return Return effective data length;-1，return failure
+    740          */
+    741          static int32_t gizProtocolGetDeviceInfo(protocolHead_t * head)
+    742          {
+    743              int32_t ret = 0;
+    744              protocolDeviceInfo_t deviceInfo;
+    745          
+    746              if(NULL == head)
+    747              {
+    748                  //GIZWITS_LOG("gizProtocolGetDeviceInfo Error , Illegal Param\n");
+    749                  return -1;
+    750              }
+    751          
+    752              gizProtocolHeadInit((protocolHead_t *)&deviceInfo);
+    753              deviceInfo.head.cmd = ACK_GET_DEVICE_INFO;
+    754              deviceInfo.head.sn = head->sn;
+    755              memcpy((uint8_t *)deviceInfo.protocolVer, protocol_VERSION, 8);
+    756              memcpy((uint8_t *)deviceInfo.p0Ver, P0_VERSION, 8);
+    757              memcpy((uint8_t *)deviceInfo.softVer, SOFTWARE_VERSION, 8);
+    758              memcpy((uint8_t *)deviceInfo.hardVer, HARDWARE_VERSION, 8);
+    759              memcpy((uint8_t *)deviceInfo.productKey, PRODUCT_KEY, strlen(PRODUCT_KEY));
+    760              memcpy((uint8_t *)deviceInfo.productSecret, PRODUCT_SECRET, strlen(PRODUCT_SECRET));
+    761              memset((uint8_t *)deviceInfo.devAttr, 0, 8);
+    762              deviceInfo.devAttr[7] |= DEV_IS_GATEWAY<<0;
+    763              deviceInfo.devAttr[7] |= (0x01<<1);
+    764              deviceInfo.ninableTime = exchangeBytes(NINABLETIME);
+    765              deviceInfo.head.len = exchangeBytes(sizeof(protocolDeviceInfo_t)-4);
+    766              deviceInfo.sum = gizProtocolSum((uint8_t *)&deviceInfo, sizeof(protocolDeviceInfo_t));
+    767          
+    768              ret = uartWrite((uint8_t *)&deviceInfo, sizeof(protocolDeviceInfo_t));
+    769              if(ret < 0)
+    770              {
+    771                  //GIZWITS_LOG("ERR: uart write error %d \n", ret);
+    772              }
+    773              
+    774              return ret;
+    775          }
+    776          
+    777          /**
+    778          * @brief Protocol 4.7 Handling of illegal message notification
+    779          
+    780          * @param[in] head  : Protocol header address
+    781          * @param[in] errno : Illegal message notification type
+    782          * @return 0， success; other， failure
+    783          */
+    784          static int32_t gizProtocolErrorCmd(protocolHead_t *head,errorPacketsType_t errno)
+    785          {
+    786              int32_t ret = 0;
+    787              protocolErrorType_t errorType;
+    788          
+    789              if(NULL == head)
+    790              {
+    791                  //GIZWITS_LOG("gizProtocolErrorCmd Error , Illegal Param\n");
+    792                  return -1;
+    793              }
+    794              gizProtocolHeadInit((protocolHead_t *)&errorType);
+    795              errorType.head.cmd = ACK_ERROR_PACKAGE;
+    796              errorType.head.sn = head->sn;
+    797              
+    798              errorType.head.len = exchangeBytes(sizeof(protocolErrorType_t)-4);
+    799              errorType.error = errno;
+    800              errorType.sum = gizProtocolSum((uint8_t *)&errorType, sizeof(protocolErrorType_t));
+    801              
+    802              ret = uartWrite((uint8_t *)&errorType, sizeof(protocolErrorType_t));
+    803              if(ret < 0)
+    804              {
+    805                  //GIZWITS_LOG("ERR: uart write error %d \n", ret);
+    806              }
+    807          
+    808              return ret;
+    809          }
+    810          
+    811          /**
+    812          * @brief Protocol 4.13 Get and process network time
+    813          *
+    814          * @param [in] head : Protocol header address
+    815          *
+    816          * @return 0， success; other， failure
+    817          */
+    818          static int8_t gizProtocolNTP(protocolHead_t *head)
+    819          {  
+    820              protocolUTT_t *UTTInfo = (protocolUTT_t *)head;
+    821              
+    822              if(NULL == head)
+    823              {
+    824                  //GIZWITS_LOG("ERR: NTP is empty \n");
+    825                  return -1;
+    826              }
+    827              
+    828              memcpy((uint8_t *)&gizwitsProtocol.TimeNTP,(uint8_t *)UTTInfo->time, (7 + 4));
+    829              gizwitsProtocol.TimeNTP.year = exchangeBytes(gizwitsProtocol.TimeNTP.year);
+    830              gizwitsProtocol.TimeNTP.ntp =exchangeWord(gizwitsProtocol.TimeNTP.ntp);
+    831          
+    832              gizwitsProtocol.NTPEvent.event[gizwitsProtocol.NTPEvent.num] = WIFI_NTP;
+    833              gizwitsProtocol.NTPEvent.num++;
+    834              
+    835              gizwitsProtocol.issuedFlag = GET_NTP_TYPE;
+    836              
+    837              
+    838              return 0;
+    839          }
+    840          
+    841          /**
+    842          * @brief Protocol 4.4 Device MCU restarts function
+    843          
+    844          * @param none
+    845          * @return none
+    846          */
+    847          static void gizProtocolReboot(void)
+    848          {
+    849              uint32_t timeDelay = gizGetTimerCount();
+    850              
+    851              /*Wait 600ms*/
+    852              while((gizGetTimerCount() - timeDelay) <= 600);
+    853              mcuRestart();
+    854          }
+    855          
+    856          /**
+    857          * @brief Protocol 4.5 :The WiFi module informs the device MCU of working status about the WiFi module
+    858          
+    859          * @param[in] status WiFi module working status
+    860          * @return none
+    861          */
+    862          static int8_t gizProtocolModuleStatus(protocolWifiStatus_t *status)
+    863          {
+    864              static wifiStatus_t lastStatus;
+    865          
+    866              if(NULL == status)
+    867              {
+    868                  //GIZWITS_LOG("gizProtocolModuleStatus Error , Illegal Param\n");
+    869                  return -1;
+    870              }
+    871          
+    872              status->ststus.value = exchangeBytes(status->ststus.value);
+    873             
+    874              //OnBoarding mode status
+    875              if(lastStatus.types.onboarding != status->ststus.types.onboarding)
+    876              {
+    877                  if(1 == status->ststus.types.onboarding)
+    878                  {
+    879                      if(1 == status->ststus.types.softap)
+    880                      {
+    881                          gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_SOFTAP;
+    882                          gizwitsProtocol.wifiStatusEvent.num++;
+    883                          //GIZWITS_LOG("OnBoarding: SoftAP or Web mode\n");
+    884                      }
+    885          
+    886                      if(1 == status->ststus.types.station)
+    887                      {
+    888                          gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_AIRLINK;
+    889                          gizwitsProtocol.wifiStatusEvent.num++;
+    890                          //GIZWITS_LOG("OnBoarding: AirLink mode\n");
+    891                      }
+    892                  }
+    893                  else
+    894                  {
+    895                      if(1 == status->ststus.types.softap)
+    896                      {
+    897                          gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_SOFTAP;
+    898                          gizwitsProtocol.wifiStatusEvent.num++;
+    899                          //GIZWITS_LOG("OnBoarding: SoftAP or Web mode\n");
+    900                      }
+    901          
+    902                      if(1 == status->ststus.types.station)
+    903                      {
+    904                          gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_STATION;
+    905                          gizwitsProtocol.wifiStatusEvent.num++;
+    906                          //GIZWITS_LOG("OnBoarding: Station mode\n");
+    907                      }
+    908                  }
+    909              }
+    910          
+    911              //binding mode status
+    912              if(lastStatus.types.binding != status->ststus.types.binding)
+    913              {
+    914                  lastStatus.types.binding = status->ststus.types.binding;
+    915                  if(1 == status->ststus.types.binding)
+    916                  {
+    917                      gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_OPEN_BINDING;
+    918                      gizwitsProtocol.wifiStatusEvent.num++;
+    919                      //GIZWITS_LOG("WiFi status: in binding mode\n");
+    920                  }
+    921                  else
+    922                  {
+    923                      gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_CLOSE_BINDING;
+    924                      gizwitsProtocol.wifiStatusEvent.num++;
+    925                      //GIZWITS_LOG("WiFi status: out binding mode\n");
+    926                  }
+    927              }
+    928          
+    929              //router status
+    930              if(lastStatus.types.con_route != status->ststus.types.con_route)
+    931              {
+    932                  lastStatus.types.con_route = status->ststus.types.con_route;
+    933                  if(1 == status->ststus.types.con_route)
+    934                  {
+    935                      gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_CON_ROUTER;
+    936                      gizwitsProtocol.wifiStatusEvent.num++;
+    937                      //GIZWITS_LOG("WiFi status: connected router\n");
+    938                  }
+    939                  else
+    940                  {
+    941                      gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_DISCON_ROUTER;
+    942                      gizwitsProtocol.wifiStatusEvent.num++;
+    943                      //GIZWITS_LOG("WiFi status: disconnected router\n");
+    944                  }
+    945              }
+    946          
+    947              //M2M server status
+    948              if(lastStatus.types.con_m2m != status->ststus.types.con_m2m)
+    949              {
+    950                  lastStatus.types.con_m2m = status->ststus.types.con_m2m;
+    951                  if(1 == status->ststus.types.con_m2m)
+    952                  {
+    953                      gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_CON_M2M;
+    954                      gizwitsProtocol.wifiStatusEvent.num++;
+    955                      //GIZWITS_LOG("WiFi status: connected m2m\n");
+    956                  }
+    957                  else
+    958                  {
+    959                      gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_DISCON_M2M;
+    960                      gizwitsProtocol.wifiStatusEvent.num++;
+    961                      //GIZWITS_LOG("WiFi status: disconnected m2m\n");
+    962                  }
+    963              }
+    964          
+    965              //APP status
+    966              if(lastStatus.types.app != status->ststus.types.app)
+    967              {
+    968                  lastStatus.types.app = status->ststus.types.app;
+    969                  if(1 == status->ststus.types.app)
+    970                  {
+    971                      gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_CON_APP;
+    972                      gizwitsProtocol.wifiStatusEvent.num++;
+    973                      //GIZWITS_LOG("WiFi status: app connect\n");
+    974                  }
+    975                  else
+    976                  {
+    977                      gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_DISCON_APP;
+    978                      gizwitsProtocol.wifiStatusEvent.num++;
+    979                      //GIZWITS_LOG("WiFi status: no app connect\n");
+    980                  }
+    981              }
+    982          
+    983              //test mode status
+    984              if(lastStatus.types.test != status->ststus.types.test)
+    985              {
+    986                  lastStatus.types.test = status->ststus.types.test;
+    987                  if(1 == status->ststus.types.test)
+    988                  {
+    989                      gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_OPEN_TESTMODE;
+    990                      gizwitsProtocol.wifiStatusEvent.num++;
+    991                      //GIZWITS_LOG("WiFi status: in test mode\n");
+    992                  }
+    993                  else
+    994                  {
+    995                      gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_CLOSE_TESTMODE;
+    996                      gizwitsProtocol.wifiStatusEvent.num++;
+    997                      //GIZWITS_LOG("WiFi status: out test mode\n");
+    998                  }
+    999              }
+   1000          
+   1001              gizwitsProtocol.wifiStatusEvent.event[gizwitsProtocol.wifiStatusEvent.num] = WIFI_RSSI;
+   1002              gizwitsProtocol.wifiStatusEvent.num++;
+   1003              gizwitsProtocol.wifiStatusData.rssi = status->ststus.types.rssi;
+   1004              //GIZWITS_LOG("RSSI is %d \n", gizwitsProtocol.wifiStatusData.rssi);
+   1005          
+   1006              gizwitsProtocol.issuedFlag = WIFI_STATUS_TYPE;
+   1007          
+   1008              return 0;
+   1009          }
+   1010          
+   1011          
+   1012          /**@name Gizwits User API interface
+   1013          * @{
+   1014          */
+   1015          
+   1016          /**
+   1017          * @brief gizwits Protocol initialization interface
+   1018          
+   1019          * Protocol-related timer, serial port initialization
+   1020          
+   1021          * Datapoint initialization
+   1022          
+   1023          * @param none
+   1024          * @return none
+   1025          */
+   1026          void gizwitsInit(void)
+   1027          {    
+   1028              pRb.rbCapacity = RB_MAX_LEN;
+   1029              pRb.rbBuff = rbBuf;
+   1030              if(0 == rbCreate(&pRb))
+   1031          	{
+   1032          		//GIZWITS_LOG("rbCreate Success \n");
+   1033          	}
+   1034          	else
+   1035          	{
+   1036          		//GIZWITS_LOG("rbCreate Faild \n");
+   1037          	}
+   1038              
+   1039              memset((uint8_t *)&gizwitsProtocol, 0, sizeof(gizwitsProtocol_t));
+   1040          }
+   1041          
+   1042          /**
+   1043          * @brief WiFi configure interface
+   1044          
+   1045          * Set the WiFi module into the corresponding configuration mode or reset the module
+   1046          
+   1047          * @param[in] mode ：0x0， reset the module ;0x01， SoftAp mode ;0x02， AirLink mode ;0x03， Production test mode; 0x04:allow users to bind devices
+   1048          
+   1049          * @return Error command code
+   1050          */
+   1051          int32_t gizwitsSetMode(uint8_t mode)
+   1052          {
+   1053              int32_t ret = 0;
+   1054              protocolCfgMode_t cfgMode;
+   1055              protocolCommon_t setDefault;
+   1056          
+   1057              switch(mode)
+   1058              {
+   1059                  case WIFI_RESET_MODE:
+   1060                      gizProtocolHeadInit((protocolHead_t *)&setDefault);
+   1061                      setDefault.head.cmd = CMD_SET_DEFAULT;
+   1062                      setDefault.head.sn = gizwitsProtocol.sn++;
+   1063                      setDefault.head.len = exchangeBytes(sizeof(protocolCommon_t)-4);
+   1064                      setDefault.sum = gizProtocolSum((uint8_t *)&setDefault, sizeof(protocolCommon_t));
+   1065                      ret = uartWrite((uint8_t *)&setDefault, sizeof(protocolCommon_t));
+   1066                      if(ret < 0)
+   1067                      {
+   1068                          //GIZWITS_LOG("ERR: uart write error %d \n", ret);
+   1069                      }
+   1070          
+   1071                      gizProtocolWaitAck((uint8_t *)&setDefault, sizeof(protocolCommon_t));   
+   1072                      break;
+   1073                  case WIFI_SOFTAP_MODE:
+   1074                      gizProtocolHeadInit((protocolHead_t *)&cfgMode);
+   1075                      cfgMode.head.cmd = CMD_WIFI_CONFIG;
+   1076                      cfgMode.head.sn = gizwitsProtocol.sn++;
+   1077                      cfgMode.cfgMode = mode;
+   1078                      cfgMode.head.len = exchangeBytes(sizeof(protocolCfgMode_t)-4);
+   1079                      cfgMode.sum = gizProtocolSum((uint8_t *)&cfgMode, sizeof(protocolCfgMode_t));
+   1080                      ret = uartWrite((uint8_t *)&cfgMode, sizeof(protocolCfgMode_t));
+   1081                      if(ret < 0)
+   1082                      {
+   1083                          //GIZWITS_LOG("ERR: uart write error %d \n", ret);
+   1084                      }
+   1085                      gizProtocolWaitAck((uint8_t *)&cfgMode, sizeof(protocolCfgMode_t)); 
+   1086                      break;
+   1087                  case WIFI_AIRLINK_MODE:
+   1088                      gizProtocolHeadInit((protocolHead_t *)&cfgMode);
+   1089                      cfgMode.head.cmd = CMD_WIFI_CONFIG;
+   1090                      cfgMode.head.sn = gizwitsProtocol.sn++;
+   1091                      cfgMode.cfgMode = mode;
+   1092                      cfgMode.head.len = exchangeBytes(sizeof(protocolCfgMode_t)-4);
+   1093                      cfgMode.sum = gizProtocolSum((uint8_t *)&cfgMode, sizeof(protocolCfgMode_t));
+   1094                      ret = uartWrite((uint8_t *)&cfgMode, sizeof(protocolCfgMode_t));
+   1095                      if(ret < 0)
+   1096                      {
+   1097                          //GIZWITS_LOG("ERR: uart write error %d \n", ret);
+   1098                      }
+   1099                      gizProtocolWaitAck((uint8_t *)&cfgMode, sizeof(protocolCfgMode_t)); 
+   1100                      break;
+   1101                  case WIFI_PRODUCTION_TEST:
+   1102                      gizProtocolHeadInit((protocolHead_t *)&setDefault);
+   1103                      setDefault.head.cmd = CMD_PRODUCTION_TEST;
+   1104                      setDefault.head.sn = gizwitsProtocol.sn++;
+   1105                      setDefault.head.len = exchangeBytes(sizeof(protocolCommon_t)-4);
+   1106                      setDefault.sum = gizProtocolSum((uint8_t *)&setDefault, sizeof(protocolCommon_t));
+   1107                      ret = uartWrite((uint8_t *)&setDefault, sizeof(protocolCommon_t));
+   1108                      if(ret < 0)
+   1109                      {
+   1110                          //GIZWITS_LOG("ERR: uart write error %d \n", ret);
+   1111                      }
+   1112          
+   1113                      gizProtocolWaitAck((uint8_t *)&setDefault, sizeof(protocolCommon_t));
+   1114                      break;
+   1115                  case WIFI_NINABLE_MODE:
+   1116                      gizProtocolHeadInit((protocolHead_t *)&setDefault);
+   1117                      setDefault.head.cmd = CMD_NINABLE_MODE;
+   1118                      setDefault.head.sn = gizwitsProtocol.sn++;
+   1119                      setDefault.head.len = exchangeBytes(sizeof(protocolCommon_t)-4);
+   1120                      setDefault.sum = gizProtocolSum((uint8_t *)&setDefault, sizeof(protocolCommon_t));
+   1121                      ret = uartWrite((uint8_t *)&setDefault, sizeof(protocolCommon_t));
+   1122                      if(ret < 0)
+   1123                      {
+   1124                          //GIZWITS_LOG("ERR: uart write error %d \n", ret);
+   1125                      }
+   1126          
+   1127                      gizProtocolWaitAck((uint8_t *)&setDefault, sizeof(protocolCommon_t)); 
+   1128                      break;
+   1129                  default:
+   1130                      //GIZWITS_LOG("ERR: CfgMode error!\n");
+   1131                      break;
+   1132              }
+   1133          
+   1134              return ret;
+   1135          }
+   1136          
+   1137          /**
+   1138          * @brief Get the the network time
+   1139          
+   1140          * Protocol 4.13:"Device MCU send" of "the MCU requests access to the network time"
+   1141          
+   1142          * @param[in] none
+   1143          * @return none
+   1144          */
+   1145          void gizwitsGetNTP(void)
+   1146          {
+   1147              int32_t ret = 0;
+   1148              protocolCommon_t getNTP;
+   1149          
+   1150              gizProtocolHeadInit((protocolHead_t *)&getNTP);
+   1151              getNTP.head.cmd = CMD_GET_NTP;
+   1152              getNTP.head.sn = gizwitsProtocol.sn++;
+   1153              getNTP.head.len = exchangeBytes(sizeof(protocolCommon_t)-4);
+   1154              getNTP.sum = gizProtocolSum((uint8_t *)&getNTP, sizeof(protocolCommon_t));
+   1155              ret = uartWrite((uint8_t *)&getNTP, sizeof(protocolCommon_t));
+   1156              if(ret < 0)
+   1157              {
+   1158                  //GIZWITS_LOG("ERR[NTP]: uart write error %d \n", ret);
+   1159              }
+   1160          
+   1161              gizProtocolWaitAck((uint8_t *)&getNTP, sizeof(protocolCommon_t));
+   1162          }
+   1163          
+   1164          
+   1165          /**
+   1166          * @brief Get Module Info
+   1167          
+   1168          * 
+   1169          
+   1170          * @param[in] none
+   1171          * @return none
+   1172          */
+   1173          void gizwitsGetModuleInfo(void)
+   1174          {
+   1175              int32_t ret = 0;
+   1176              protocolGetModuleInfo_t getModuleInfo;
+   1177          
+   1178              gizProtocolHeadInit((protocolHead_t *)&getModuleInfo);
+   1179              getModuleInfo.head.cmd = CMD_ASK_MODULE_INFO;
+   1180              getModuleInfo.head.sn = gizwitsProtocol.sn++;
+   1181              getModuleInfo.type = 0x0;
+   1182              getModuleInfo.head.len = exchangeBytes(sizeof(protocolGetModuleInfo_t)-4);
+   1183              getModuleInfo.sum = gizProtocolSum((uint8_t *)&getModuleInfo, sizeof(protocolGetModuleInfo_t));
+   1184              ret = uartWrite((uint8_t *)&getModuleInfo, sizeof(protocolGetModuleInfo_t));
+   1185              if(ret < 0)
+   1186              {
+   1187                  //GIZWITS_LOG("ERR[NTP]: uart write error %d \n", ret);
+   1188              }
+   1189          
+   1190              gizProtocolWaitAck((uint8_t *)&getModuleInfo, sizeof(protocolGetModuleInfo_t));
+   1191          }
+   1192          
+   1193          
+   1194          /**
+   1195          * @brief Module Info Analyse
+   1196          *
+   1197          * @param [in] head : 
+   1198          *
+   1199          * @return 0, Success， , other,Faild
+   1200          */
+   1201          static int8_t gizProtocolModuleInfoHandle(protocolHead_t *head)
+   1202          {
+   1203              protocolModuleInfo_t *moduleInfo = (protocolModuleInfo_t *)head;
+   1204          
+   1205              if(NULL == head)
+   1206              {
+   1207                  //GIZWITS_LOG("NTP is empty \n");
+   1208                  return -1;
+   1209              }
+   1210          
+   1211              memcpy((uint8_t *)&gizwitsProtocol.wifiModuleNews,(uint8_t *)&moduleInfo->wifiModuleInfo, sizeof(moduleInfo_t));
+   1212          
+   1213              gizwitsProtocol.moduleInfoEvent.event[gizwitsProtocol.moduleInfoEvent.num] = MODULE_INFO;
+   1214              gizwitsProtocol.moduleInfoEvent.num++;
+   1215          
+   1216              gizwitsProtocol.issuedFlag = GET_MODULEINFO_TYPE;
+   1217          
+   1218          
+   1219              return 0;
+   1220          }
+   1221          
+   1222          /**
+   1223          * @brief Protocol handling function
+   1224          
+   1225          * 
+   1226          
+   1227          * @param [in] currentData :The protocol data pointer
+   1228          * @return none
+   1229          */
+   1230          int32_t gizwitsHandle(dataPoint_t *currentData)
+   1231          {
+   1232              int8_t ret = 0;
+   1233          #ifdef PROTOCOL_DEBUG
+   1234              uint16_t i = 0;
+   1235          #endif
+   1236              uint8_t ackData[RB_MAX_LEN];
+   1237              uint16_t protocolLen = 0;
+   1238              uint32_t ackLen = 0;
+   1239              protocolHead_t *recvHead = NULL;
+   1240              char *didPtr = NULL;
+   1241              uint16_t offset = 0;
+   1242          
+   1243          
+   1244              if(NULL == currentData)
+   1245              {
+   1246                  //GIZWITS_LOG("GizwitsHandle Error , Illegal Param\n");
+   1247                  return -1;
+   1248              }
+   1249          
+   1250              /*resend strategy*/
+   1251              gizProtocolAckHandle();
+   1252              ret = gizProtocolGetOnePacket(&pRb, gizwitsProtocol.protocolBuf, &protocolLen);
+   1253          
+   1254              if(0 == ret)
+   1255              {
+   1256                  //GIZWITS_LOG("Get One Packet!\n");
+   1257                  
+   1258          #ifdef PROTOCOL_DEBUG
+   1259                  //GIZWITS_LOG("WiFi2MCU[%4d:%4d]: ", gizGetTimerCount(), protocolLen);
+   1260                  for(i=0; i<protocolLen;i++)
+   1261                  {
+   1262                      //GIZWITS_LOG("%02x ", gizwitsProtocol.protocolBuf[i]);
+   1263                  }
+   1264                  //GIZWITS_LOG("\n");
+   1265          #endif
+   1266          
+   1267                  recvHead = (protocolHead_t *)gizwitsProtocol.protocolBuf;
+   1268                  switch (recvHead->cmd)
+   1269                  {
+   1270                      case CMD_GET_DEVICE_INTO:
+   1271                          gizProtocolGetDeviceInfo(recvHead);
+   1272                          break;
+   1273                      case CMD_ISSUED_P0:
+   1274                          //GIZWITS_LOG("flag %x %x \n", recvHead->flags[0], recvHead->flags[1]);
+   1275                          //offset = 1;
+   1276                         
+   1277                          if(0 == gizProtocolIssuedProcess(didPtr, gizwitsProtocol.protocolBuf+sizeof(protocolHead_t)+offset, protocolLen-(sizeof(protocolHead_t)+offset+1), ackData, &ackLen))
+   1278                          {
+   1279                              gizProtocolIssuedDataAck(recvHead, ackData, ackLen,recvHead->flags[1]);
+   1280                              //GIZWITS_LOG("AckData : \n");
+   1281                          }
+   1282                          break;
+   1283                      case CMD_HEARTBEAT:
+   1284                          gizProtocolCommonAck(recvHead);
+   1285                          break;
+   1286                      case CMD_WIFISTATUS:
+   1287                          gizProtocolCommonAck(recvHead);
+   1288                          gizProtocolModuleStatus((protocolWifiStatus_t *)recvHead);
+   1289                          break;
+   1290                      case ACK_REPORT_P0:
+   1291                      case ACK_WIFI_CONFIG:
+   1292                      case ACK_SET_DEFAULT:
+   1293                      case ACK_NINABLE_MODE:
+   1294                          gizProtocolWaitAckCheck(recvHead);
+   1295                          break;
+   1296                      case CMD_MCU_REBOOT:
+   1297                          gizProtocolCommonAck(recvHead);
+   1298                          //GIZWITS_LOG("report:MCU reboot!\n");
+   1299                          
+   1300                          gizProtocolReboot();
+   1301                          break;
+   1302                      case CMD_ERROR_PACKAGE:
+   1303                          break;
+   1304                      case ACK_PRODUCTION_TEST:
+   1305                          gizProtocolWaitAckCheck(recvHead);
+   1306                          //GIZWITS_LOG("Ack PRODUCTION_MODE success \n");
+   1307                          break;           
+   1308                      case ACK_GET_NTP:
+   1309                          gizProtocolWaitAckCheck(recvHead);
+   1310                          gizProtocolNTP(recvHead);
+   1311                          //GIZWITS_LOG("Ack GET_UTT success \n");
+   1312                          break; 
+   1313                      case ACK_ASK_MODULE_INFO:
+   1314                          gizProtocolWaitAckCheck(recvHead);
+   1315                          gizProtocolModuleInfoHandle(recvHead);
+   1316                          //GIZWITS_LOG("Ack GET_Module success \n");
+   1317                      break;
+   1318           
+   1319                      default:
+   1320                          gizProtocolErrorCmd(recvHead,ERROR_CMD);
+   1321                          //GIZWITS_LOG("ERR: cmd code error!\n");
+   1322                          break;
+   1323                  }
+   1324              }
+   1325              else if(-2 == ret)
+   1326              {
+   1327                  //Check failed, report exception
+   1328                  recvHead = (protocolHead_t *)gizwitsProtocol.protocolBuf;
+   1329                  gizProtocolErrorCmd(recvHead,ERROR_ACK_SUM);
+   1330                  //GIZWITS_LOG("ERR: check sum error!\n");
+   1331                  return -2;
+   1332              }
+   1333              
+   1334              switch(gizwitsProtocol.issuedFlag)
+   1335              {
+   1336                  case ACTION_CONTROL_TYPE:
+   1337                      gizwitsProtocol.issuedFlag = STATELESS_TYPE;
+   1338                      gizwitsEventProcess(&gizwitsProtocol.issuedProcessEvent, (uint8_t *)&gizwitsProtocol.gizCurrentDataPoint, sizeof(dataPoint_t));
+   1339                      memset((uint8_t *)&gizwitsProtocol.issuedProcessEvent,0x0,sizeof(gizwitsProtocol.issuedProcessEvent));  
+   1340                      break;
+   1341                  case WIFI_STATUS_TYPE:
+   1342                      gizwitsProtocol.issuedFlag = STATELESS_TYPE;
+   1343                      gizwitsEventProcess(&gizwitsProtocol.wifiStatusEvent, (uint8_t *)&gizwitsProtocol.wifiStatusData, sizeof(moduleStatusInfo_t));
+   1344                      memset((uint8_t *)&gizwitsProtocol.wifiStatusEvent,0x0,sizeof(gizwitsProtocol.wifiStatusEvent));
+   1345                      break;
+   1346                  case ACTION_W2D_TRANSPARENT_TYPE:
+   1347                      gizwitsProtocol.issuedFlag = STATELESS_TYPE;
+   1348                      gizwitsEventProcess(&gizwitsProtocol.issuedProcessEvent, (uint8_t *)gizwitsProtocol.transparentBuff, gizwitsProtocol.transparentLen);
+   1349                      break;
+   1350                  case GET_NTP_TYPE:
+   1351                      gizwitsProtocol.issuedFlag = STATELESS_TYPE;
+   1352                      gizwitsEventProcess(&gizwitsProtocol.NTPEvent, (uint8_t *)&gizwitsProtocol.TimeNTP, sizeof(protocolTime_t));
+   1353                      memset((uint8_t *)&gizwitsProtocol.NTPEvent,0x0,sizeof(gizwitsProtocol.NTPEvent));
+   1354                      break;
+   1355                  case GET_MODULEINFO_TYPE:
+   1356                      gizwitsProtocol.issuedFlag = STATELESS_TYPE;
+   1357                      gizwitsEventProcess(&gizwitsProtocol.moduleInfoEvent, (uint8_t *)&gizwitsProtocol.wifiModuleNews, sizeof(moduleInfo_t));
+   1358                      memset((uint8_t *)&gizwitsProtocol.moduleInfoEvent,0x0,sizeof(moduleInfo_t));
+   1359                      break;
+   1360                  default:
+   1361                      break;      
+   1362              }
+   1363          
+   1364              gizDevReportPolicy(currentData);
+   1365          
+   1366              return 0;
+   1367          }
+   1368          
+   1369          /**
+   1370          * @brief gizwits report transparent data interface
+   1371          
+   1372          * The user can call the interface to complete the reporting of private protocol data
+   1373          
+   1374          * @param [in] data :Private protocol data
+   1375          * @param [in] len  :Private protocol data length
+   1376          * @return 0，success ;other，failure
+   1377          */
+   1378          int32_t gizwitsPassthroughData(uint8_t * gizdata, uint32_t len)
+   1379          {
+   1380          	int32_t ret = 0;
+   1381          	uint8_t tx_buf[MAX_PACKAGE_LEN];
+   1382          	uint8_t *pTxBuf = tx_buf;
+   1383          	uint16_t data_len = 6+len;
+   1384              if(NULL == gizdata)
+   1385              {
+   1386                  //GIZWITS_LOG("[ERR] gizwitsPassthroughData Error \n");
+   1387                  return (-1);
+   1388              }
+   1389          
+   1390          	*pTxBuf ++= 0xFF;
+   1391          	*pTxBuf ++= 0xFF;
+   1392          	*pTxBuf ++= (uint8_t)(data_len>>8);//len
+   1393          	*pTxBuf ++= (uint8_t)(data_len);
+   1394          	*pTxBuf ++= CMD_REPORT_P0;//0x1b cmd
+   1395          	*pTxBuf ++= gizwitsProtocol.sn++;//sn
+   1396          	*pTxBuf ++= 0x00;//flag
+   1397          	*pTxBuf ++= 0x00;//flag
+   1398          	*pTxBuf ++= ACTION_D2W_TRANSPARENT_DATA;//P0_Cmd
+   1399          
+   1400              memcpy(&tx_buf[9],gizdata,len);
+   1401              tx_buf[data_len + 4 - 1 ] = gizProtocolSum( tx_buf , (data_len+4));
+   1402              
+   1403          	ret = uartWrite(tx_buf, data_len+4);
+   1404              if(ret < 0)
+   1405              {
+   1406                  //GIZWITS_LOG("ERR: uart write error %d \n", ret);
+   1407              }
+   1408          
+   1409              gizProtocolWaitAck(tx_buf, data_len+4);
+   1410          
+   1411              return 0;
+   1412          }
+   1413          
+   1414          /**@} */
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       9  ?_0
+       9  ?_1
+       9  ?_2
+       9  ?_3
+      33  ?_4
+      33  ?_5
+       1  debugCount
+     654  gizCheckReport
+     911  gizDataPoint2Event
+     757  gizDataPoints2ReportData
+     192  gizDevReportPolicy
+      68  gizProtocolAckHandle
+     122  gizProtocolCommonAck
+     136  gizProtocolErrorCmd
+     340  gizProtocolGetDeviceInfo
+     555  gizProtocolGetOnePacket
+      66  gizProtocolHeadInit
+     502  gizProtocolIssuedDataAck
+     445  gizProtocolIssuedProcess
+      76  gizProtocolModuleInfoHandle
+    1463  gizProtocolModuleStatus
+     100  gizProtocolNTP
+      38  gizProtocolReboot
+      47  gizProtocolResendData
+      96  gizProtocolWaitAck
+     102  gizProtocolWaitAckCheck
+      87  gizPutData
+     204  gizReportData
+     128  gizwitsGetModuleInfo
+     125  gizwitsGetNTP
+     753  gizwitsHandle
+      55  gizwitsInit
+     322  gizwitsPassthroughData
+     323  gizwitsProtocol
+     627  gizwitsSetMode
+       1  lastData
+       4  lastRepTime
+       4  lastReportTime
+       2  lastStatus
+      11  pRb
+       2  protocolCount
+       1  protocolFlag
+      56  rbBuf
+
+ 
+   102 bytes in section .far.rodata
+   405 bytes in section .near.bss
+ 8 971 bytes in section .near_func.text
+ 
+ 8 971 bytes of CODE  memory
+   102 bytes of CONST memory
+   405 bytes of DATA  memory
+
+Errors: none
+Warnings: 1

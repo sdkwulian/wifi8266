@@ -1,0 +1,342 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V2.20.1.176 for STM8                 16/Nov/2017  19:30:31
+# Copyright 2010-2015 IAR Systems AB.
+# Standalone license - IAR Embedded Workbench for STMicroelectronics STM8
+#
+#    Source file  =  D:\秦东\test1\wifi-uart - 10-20\Gizwits\gizwits_product.c
+#    Command line =  
+#        "D:\秦东\test1\wifi-uart - 10-20\Gizwits\gizwits_product.c" -e -Ol
+#        --no_cse --no_unroll --no_inline --no_code_motion --no_tbaa
+#        --no_cross_call --debug --code_model small --data_model large -o
+#        "D:\秦东\test1\wifi-uart - 10-20\Debug\Obj" --dlib_config "D:\Program
+#        Files (x86)\IAR Systems\Embedded Workbench 7.3\stm8\LIB\dlstm8sln.h"
+#        -lcN "D:\秦东\test1\wifi-uart - 10-20\Debug\List" -I
+#        "D:\秦东\test1\wifi-uart - 10-20\Gizwits\" -I "D:\秦东\test1\wifi-uart
+#        - 10-20\Utils\" --vregs 16
+#    List file    =  
+#        D:\秦东\test1\wifi-uart - 10-20\Debug\List\gizwits_product.lst
+#    Object file  =  
+#        D:\秦东\test1\wifi-uart - 10-20\Debug\Obj\gizwits_product.o
+#
+###############################################################################
+
+D:\秦东\test1\wifi-uart - 10-20\Gizwits\gizwits_product.c
+      1          /**
+      2          ************************************************************
+      3          * @file         gizwits_product.c
+      4          * @brief        Gizwits control protocol processing, and platform-related hardware initialization 
+      5          * @author       Gizwits
+      6          * @date         2017-07-19
+      7          * @version      V03030000
+      8          * @copyright    Gizwits
+      9          *
+     10          * @note         Gizwits is only for smart hardware
+     11          *               Gizwits Smart Cloud for Smart Products
+     12          *               Links | Value Added | Open | Neutral | Safety | Own | Free | Ecology
+     13          *               www.gizwits.com
+     14          *
+     15          ***********************************************************/
+     16          #include <stdio.h>
+     17          #include <string.h>
+     18          #include "gizwits_product.h"
+     19          
+     20          static uint32_t timerMsCount;
+     21          
+     22          
+     23          
+     24          /**@} */
+     25          /**@name Gizwits User Interface
+     26          * @{
+     27          */
+     28          
+     29          /**
+     30          * @brief Event handling interface
+     31          
+     32          * Description:
+     33          
+     34          * 1. Users can customize the changes in WiFi module status
+     35          
+     36          * 2. Users can add data points in the function of event processing logic, such as calling the relevant hardware peripherals operating interface
+     37          
+     38          * @param [in] info: event queue
+     39          * @param [in] data: protocol data
+     40          * @param [in] len: protocol data length
+     41          * @return NULL
+     42          * @ref gizwits_protocol.h
+     43          */
+     44          int8_t gizwitsEventProcess(eventInfo_t *info, uint8_t *gizdata, uint32_t len)
+     45          {
+     46            uint8_t i = 0;
+     47            dataPoint_t *dataPointPtr = (dataPoint_t *)gizdata;
+     48            moduleStatusInfo_t *wifiData = (moduleStatusInfo_t *)gizdata;
+     49            protocolTime_t *ptime = (protocolTime_t *)gizdata;
+     50            
+     51          #if MODULE_TYPE
+     52            gprsInfo_t *gprsInfoData = (gprsInfo_t *)gizdata;
+     53          #else
+     54            moduleInfo_t *ptModuleInfo = (moduleInfo_t *)gizdata;
+     55          #endif
+     56          
+     57            if((NULL == info) || (NULL == gizdata))
+     58            {
+     59              return -1;
+     60            }
+     61          
+     62            for(i=0; i<info->num; i++)
+     63            {
+     64              switch(info->event[i])
+     65              {
+     66                case EVENT_Heater:
+     67                  currentDataPoint.valueHeater = dataPointPtr->valueHeater;
+     68                  //GIZWITS_LOG("Evt: EVENT_Heater %d \n", currentDataPoint.valueHeater);
+     69                  if(0x01 == currentDataPoint.valueHeater)
+     70                  {
+     71                    //user handle
+     72                  }
+     73                  else
+     74                  {
+     75                    //user handle    
+     76                  }
+     77                  break;
+     78                case EVENT_Bubble:
+     79                  currentDataPoint.valueBubble = dataPointPtr->valueBubble;
+     80                  //GIZWITS_LOG("Evt: EVENT_Bubble %d \n", currentDataPoint.valueBubble);
+     81                  if(0x01 == currentDataPoint.valueBubble)
+     82                  {
+     83                    //user handle
+     84                  }
+     85                  else
+     86                  {
+     87                    //user handle    
+     88                  }
+     89                  break;
+     90                case EVENT_Filter:
+     91                  currentDataPoint.valueFilter = dataPointPtr->valueFilter;
+     92                  //GIZWITS_LOG("Evt: EVENT_Filter %d \n", currentDataPoint.valueFilter);
+     93                  if(0x01 == currentDataPoint.valueFilter)
+     94                  {
+     95                    //user handle
+     96                  }
+     97                  else
+     98                  {
+     99                    //user handle    
+    100                  }
+    101                  break;
+    102                case EVENT_O3:
+    103                  currentDataPoint.valueO3 = dataPointPtr->valueO3;
+    104                  //GIZWITS_LOG("Evt: EVENT_O3 %d \n", currentDataPoint.valueO3);
+    105                  if(0x01 == currentDataPoint.valueO3)
+    106                  {
+    107                    //user handle
+    108                  }
+    109                  else
+    110                  {
+    111                    //user handle    
+    112                  }
+    113                  break;
+    114          
+    115          
+    116                case EVENT_Temperature_setup:
+    117                  currentDataPoint.valueTemperature_setup = dataPointPtr->valueTemperature_setup;
+    118                  //GIZWITS_LOG("Evt:EVENT_Temperature_setup %d\n",currentDataPoint.valueTemperature_setup);
+    119                  //user handle
+    120                  break;
+    121                case EVENT_Timing:
+    122                  currentDataPoint.valueTiming = dataPointPtr->valueTiming;
+    123                  //GIZWITS_LOG("Evt:EVENT_Timing %d\n",currentDataPoint.valueTiming);
+    124                  //user handle
+    125                  break;
+    126          
+    127          
+    128                case WIFI_SOFTAP:
+    129                  break;
+    130                case WIFI_AIRLINK:
+    131                  break;
+    132                case WIFI_STATION:
+    133                  break;
+    134                case WIFI_CON_ROUTER:
+    135           
+    136                  break;
+    137                case WIFI_DISCON_ROUTER:
+    138           
+    139                  break;
+    140                case WIFI_CON_M2M:
+    141           
+    142                  break;
+    143                case WIFI_DISCON_M2M:
+    144                  break;
+    145                case WIFI_RSSI:
+    146                  //GIZWITS_LOG("RSSI %d\n", wifiData->rssi);
+    147                  break;
+    148                case TRANSPARENT_DATA:
+    149                  //GIZWITS_LOG("TRANSPARENT_DATA \n");
+    150                  //user handle , Fetch data from [data] , size is [len]
+    151                  break;
+    152                case WIFI_NTP:
+    153                  //GIZWITS_LOG("WIFI_NTP : [%d-%d-%d %02d:%02d:%02d][%d] \n",ptime->year,ptime->month,ptime->day,ptime->hour,ptime->minute,ptime->second,ptime->ntp);
+    154                  break;
+    155                case MODULE_INFO:
+    156                      //GIZWITS_LOG("MODULE INFO ...\n");
+    157                #if MODULE_TYPE
+    158                      //GIZWITS_LOG("GPRS MODULE ...\n");
+    159                      //Format By gprsInfo_t
+    160                #else
+    161                      //GIZWITS_LOG("WIF MODULE ...\n");
+    162                      //Format By moduleInfo_t
+    163                      //GIZWITS_LOG("moduleType : [%d] \n",ptModuleInfo->moduleType);
+    164                #endif
+    165              break;
+    166                default:
+    167                  break;
+    168              }
+    169            }
+    170          
+    171            return 0;
+    172          }
+    173          
+    174          /**
+    175          * User data acquisition
+    176          
+    177          * Here users need to achieve in addition to data points other than the collection of data collection, can be self-defined acquisition frequency and design data filtering algorithm
+    178          
+    179          * @param none
+    180          * @return none
+    181          */
+    182          void userHandle(void)
+    183          {
+    184           /*
+    185              currentDataPoint.valueTime_filter = ;//Add Sensor Data Collection
+    186              currentDataPoint.valueOvertime_filter = ;//Add Sensor Data Collection
+    187              currentDataPoint.valueSuperheat = ;//Add Sensor Data Collection
+    188              currentDataPoint.valueUndercooling = ;//Add Sensor Data Collection
+    189          
+    190              */
+    191              
+    192          }
+    193          
+    194          /**
+    195          * Data point initialization function
+    196          
+    197          * In the function to complete the initial user-related data
+    198          * @param none
+    199          * @return none
+    200          * @note The developer can add a data point state initialization value within this function
+    201          */
+    202          void userInit(void)
+    203          {
+    204              memset((uint8_t*)&currentDataPoint, 0, sizeof(dataPoint_t));
+    205              
+    206              /** Warning !!! DataPoint Variables Init , Must Within The Data Range **/ 
+    207              /*
+    208                currentDataPoint.valueHeater = ;
+    209                currentDataPoint.valueBubble = ;
+    210                currentDataPoint.valueFilter = ;
+    211                currentDataPoint.valueO3 = ;
+    212                currentDataPoint.valueTemperature_setup = ;
+    213                currentDataPoint.valueTiming = ;
+    214                currentDataPoint.valueTime_filter = ;
+    215                currentDataPoint.valueOvertime_filter = ;
+    216                currentDataPoint.valueSuperheat = ;
+    217                currentDataPoint.valueUndercooling = ;
+    218              */
+    219          
+    220          }
+    221          
+    222          
+    223          /**
+    224          * @brief  gizTimerMs
+    225          
+    226          * millisecond timer maintenance function ,Millisecond increment , Overflow to zero
+    227          
+    228          * @param none
+    229          * @return none
+    230          */
+    231          void gizTimerMs(void)
+    232          {
+    233              timerMsCount++;
+    234          }
+    235          
+    236          /**
+    237          * @brief gizGetTimerCount
+    238          
+    239          * Read system time, millisecond timer
+    240          
+    241          * @param none
+    242          * @return System time millisecond
+    243          */
+    244          uint32_t gizGetTimerCount(void)
+    245          {
+    246              return timerMsCount;
+    247          }
+    248          
+    249          /**
+    250          * @brief mcuRestart
+    251          
+    252          * MCU Reset function
+    253          
+    254          * @param none
+    255          * @return none
+    256          */
+    257          void mcuRestart(void)
+    258          {
+    259          
+    260          }
+    261          /**@} */
+    262          
+    263          /**
+    264          * @brief TIMER_IRQ_FUN
+    265          
+    266          * Timer Interrupt handler function
+    267          
+    268          * @param none
+    269          * @return none
+    270          */
+    271          void TIMER_IRQ_FUN(void)
+    272          {
+    273            gizTimerMs();
+    274          }
+    275          
+    276          /**
+    277          * @brief UART_IRQ_FUN
+    278          
+    279          * UART Serial interrupt function 锛孎or Module communication
+    280          
+    281          * Used to receive serial port protocol data between WiFi module
+    282          
+    283          * @param none
+    284          * @return none
+    285          */
+    286          void UART_IRQ_FUN(void)
+    287          {
+    288            uint8_t value = 0;
+    289            //value = USART_ReceiveData(USART2);//STM32 test demo
+    290            gizPutData(&value, 1);
+    291          }
+    292          
+    293          
+    294          
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       3  TIMER_IRQ_FUN
+      25  UART_IRQ_FUN
+       6  gizGetTimerCount
+      15  gizTimerMs
+     347  gizwitsEventProcess
+       1  mcuRestart
+       4  timerMsCount
+       1  userHandle
+      17  userInit
+
+ 
+   4 bytes in section .near.bss
+ 415 bytes in section .near_func.text
+ 
+ 415 bytes of CODE memory
+   4 bytes of DATA memory
+
+Errors: none
+Warnings: 3

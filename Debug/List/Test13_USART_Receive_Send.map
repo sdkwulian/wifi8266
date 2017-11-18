@@ -1,0 +1,611 @@
+###############################################################################
+#
+# IAR ELF Linker V2.20.1.176 for STM8                     16/Nov/2017  19:34:00
+# Copyright 2010-2015 IAR Systems AB.
+#
+#    Output file  =  
+#        D:\秦东\test1\wifi-uart -
+#        10-20\Debug\Exe\Test13_USART_Receive_Send.out
+#    Map file     =  
+#        D:\秦东\test1\wifi-uart -
+#        10-20\Debug\List\Test13_USART_Receive_Send.map
+#    Command line =  
+#        "D:\秦东\test1\wifi-uart - 10-20\Debug\Obj\common.o"
+#        "D:\秦东\test1\wifi-uart - 10-20\Debug\Obj\dataPointTools.o"
+#        "D:\秦东\test1\wifi-uart - 10-20\Debug\Obj\gizwits_product.o"
+#        "D:\秦东\test1\wifi-uart - 10-20\Debug\Obj\gizwits_protocol.o"
+#        "D:\秦东\test1\wifi-uart - 10-20\Debug\Obj\main.o"
+#        "D:\秦东\test1\wifi-uart - 10-20\Debug\Obj\ringbuffer.o" --redirect
+#        _Printf=_PrintfFullNoMb --redirect _Scanf=_ScanfFullNoMb -o
+#        "D:\秦东\test1\wifi-uart -
+#        10-20\Debug\Exe\Test13_USART_Receive_Send.out" --map
+#        "D:\秦东\test1\wifi-uart -
+#        10-20\Debug\List\Test13_USART_Receive_Send.map" --config "D:\Program
+#        Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\stm8\config\lnkstm8s105c6.icf" --config_def _CSTACK_SIZE=0x100
+#        --config_def _HEAP_SIZE=0x100 --entry __iar_program_start --debug_lib
+#
+###############################################################################
+
+*******************************************************************************
+*** RUNTIME MODEL ATTRIBUTES
+***
+
+__SystemLibrary            = DLib
+__code_model               = small
+__core                     = stm8
+__data_model               = large
+__dlib_file_descriptor     = 0
+__dlib_full_locale_support = 0
+__rt_version               = 4
+
+
+*******************************************************************************
+*** PLACEMENT SUMMARY
+***
+
+"A1":  place at start of [0x000000-0x0000ff] { rw section .vregs };
+"A2":  place at end of [0x000000-0x0007ff] { block CSTACK };
+"P2":  place in [from 0x000000 to 0x0007ff] {
+          block HEAP, rw section __DLIB_PERTHREAD, rw section .far.bss,
+          rw section .far.data, rw section .far.noinit,
+          rw section .far_func.textrw, rw section .huge.bss,
+          rw section .huge.data, rw section .huge.noinit,
+          rw section .huge_func.textrw, rw section .iar.dynexit,
+          rw section .near.bss, rw section .near.data, rw section .near.noinit,
+          rw section .near_func.textrw };
+"A3":  place at start of [0x008000-0x00ffff] { block INTVEC };
+"P3":  place in [from 0x008000 to 0x00ffff] {
+          ro section __DLIB_PERTHREAD_init, ro section .far.data_init,
+          ro section .far_func.textrw_init, ro section .huge.data_init,
+          ro section .huge_func.textrw_init, ro section .iar.init_table,
+          ro section .init_array, ro section .near.data_init,
+          ro section .near.rodata, ro section .near_func.text,
+          ro section .near_func.textrw_init, ro section .tiny.data_init,
+          ro section .tiny.rodata_init };
+"P4":  place in [from 0x008000 to 0x00ffff] {
+          ro section .far.rodata, ro section .far_func.text };
+
+  Section          Kind      Address    Size  Object
+  -------          ----      -------    ----  ------
+"A1":                                   0x10
+  .vregs           uninit   0x000000    0x10  vregs.o [4]
+                          - 0x000010    0x10
+
+"P2":                                  0x1b4
+  .near.bss        zero     0x000010   0x143  gizwits_protocol.o [1]
+  .near.bss        zero     0x000153    0x38  gizwits_protocol.o [1]
+  .near.bss        zero     0x00018b    0x13  main.o [1]
+  .near.bss        zero     0x00019e     0xb  gizwits_protocol.o [1]
+  .near.bss        zero     0x0001a9     0x4  gizwits_product.o [1]
+  .near.bss        zero     0x0001ad     0x4  gizwits_protocol.o [1]
+  .near.bss        zero     0x0001b1     0x4  gizwits_protocol.o [1]
+  .near.bss        zero     0x0001b5     0x3  main.o [1]
+  .near.bss        zero     0x0001b8     0x3  main.o [1]
+  .near.bss        zero     0x0001bb     0x2  gizwits_protocol.o [1]
+  .near.bss        zero     0x0001bd     0x2  gizwits_protocol.o [1]
+  .near.bss        zero     0x0001bf     0x2  main.o [1]
+  .near.bss        zero     0x0001c1     0x1  gizwits_protocol.o [1]
+  .near.bss        zero     0x0001c2     0x1  gizwits_protocol.o [1]
+  .near.bss        zero     0x0001c3     0x1  gizwits_protocol.o [1]
+                          - 0x0001c4   0x1b4
+
+"A2":                                  0x100
+  CSTACK                    0x000700   0x100  <Block>
+    CSTACK         uninit   0x000700   0x100  <Block tail>
+                          - 0x000800   0x100
+
+Absolute sections, part 1 of 8:          0x1
+  .near.noinit     uninit   0x005001     0x1  main.o [1]
+                          - 0x005002     0x1
+
+Absolute sections, part 2 of 8:          0x4
+  .near.noinit     uninit   0x00500b     0x1  main.o [1]
+  .near.noinit     uninit   0x00500c     0x1  main.o [1]
+  .near.noinit     uninit   0x00500d     0x1  main.o [1]
+  .near.noinit     uninit   0x00500e     0x1  main.o [1]
+                          - 0x00500f     0x4
+
+Absolute sections, part 3 of 8:          0x4
+  .near.noinit     uninit   0x005010     0x1  main.o [1]
+  .near.noinit     uninit   0x005011     0x1  main.o [1]
+  .near.noinit     uninit   0x005012     0x1  main.o [1]
+  .near.noinit     uninit   0x005013     0x1  main.o [1]
+                          - 0x005014     0x4
+
+Absolute sections, part 4 of 8:          0x1
+  .near.noinit     uninit   0x0050c6     0x1  main.o [1]
+                          - 0x0050c7     0x1
+
+Absolute sections, part 5 of 8:          0x1
+  .near.noinit     uninit   0x0050f3     0x1  main.o [1]
+                          - 0x0050f4     0x1
+
+Absolute sections, part 6 of 8:          0x6
+  .near.noinit     uninit   0x005230     0x1  main.o [1]
+  .near.noinit     uninit   0x005231     0x1  main.o [1]
+  .near.noinit     uninit   0x005232     0x1  main.o [1]
+  .near.noinit     uninit   0x005233     0x1  main.o [1]
+  .near.noinit     uninit   0x005234     0x1  main.o [1]
+  .near.noinit     uninit   0x005235     0x1  main.o [1]
+                          - 0x005236     0x6
+
+Absolute sections, part 7 of 8:          0x1
+  .near.noinit     uninit   0x005340     0x1  main.o [1]
+                          - 0x005341     0x1
+
+Absolute sections, part 8 of 8:          0x6
+  .near.noinit     uninit   0x005343     0x1  main.o [1]
+  .near.noinit     uninit   0x005344     0x1  main.o [1]
+  .near.noinit     uninit   0x005345     0x1  main.o [1]
+  .near.noinit     uninit   0x005346     0x1  main.o [1]
+  .near.noinit     uninit   0x005347     0x1  main.o [1]
+  .near.noinit     uninit   0x005348     0x1  main.o [1]
+                          - 0x005349     0x6
+
+"A3":                                   0x80
+  INTVEC                    0x008000    0x80  <Block>
+    .intvec        const    0x008000    0x80  interrupt.o [4]
+                          - 0x008080    0x80
+
+"P3":                                 0x390a
+  .near_func.text  ro code  0x008080   0x5b7  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x008637   0x38f  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x0089c6   0x358  ringbuffer.o [1]
+  .near_func.text  ro code  0x008d1e   0x331  ringbuffer.o [1]
+  .near_func.text  ro code  0x00904f   0x2f5  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x009344   0x2f1  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x009635   0x28e  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x0098c3   0x273  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x009b36   0x22b  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x009d61   0x1f6  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x009f57   0x1e9  long.o [4]
+  .near_func.text  ro code  0x00a140   0x1bd  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00a2fd   0x1af  vreg_util.o [4]
+  .near_func.text  ro code  0x00a4ac   0x187  dataPointTools.o [1]
+  .near_func.text  ro code  0x00a633   0x175  ringbuffer.o [1]
+  .near_func.text  ro code  0x00a7a8   0x15b  gizwits_product.o [1]
+  .near_func.text  ro code  0x00a903   0x154  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00aa57   0x14a  dataPointTools.o [1]
+  .near_func.text  ro code  0x00aba1    0xd9  main.o [1]
+  .near_func.text  ro code  0x00ac7a    0xcc  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00ad46    0xc0  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00ae06    0xb0  dataPointTools.o [1]
+  .near_func.text  ro code  0x00aeb6    0xab  long_util.o [4]
+  .near_func.text  ro code  0x00af61    0xa5  ringbuffer.o [1]
+  .near_func.text  ro code  0x00b006    0x8a  main.o [1]
+  .near_func.text  ro code  0x00b090    0x88  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00b118    0x7a  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00b192    0x71  common.o [1]
+  .near_func.text  ro code  0x00b203    0x6b  dataPointTools.o [1]
+  .near_func.text  ro code  0x00b26e    0x66  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00b2d4    0x65  far_util.o [4]
+  .near_func.text  ro code  0x00b339    0x64  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00b39d    0x60  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00b3fd    0x5a  common.o [1]
+  .near_func.text  ro code  0x00b457    0x57  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00b4ae    0x4c  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00b4fa    0x44  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00b53e    0x44  ringbuffer.o [1]
+  .near_func.text  ro code  0x00b582    0x42  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00b5c4    0x41  common.o [1]
+  .near_func.text  ro code  0x00b605    0x37  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00b63c    0x34  main.o [1]
+  .near_func.text  ro code  0x00b670    0x32  ringbuffer.o [1]
+  .near_func.text  ro code  0x00b6a2    0x31  main.o [1]
+  .near_func.text  ro code  0x00b6d3    0x31  main.o [1]
+  .near_func.text  ro code  0x00b704    0x2f  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00b733    0x2e  memcpy.o [4]
+  .near_func.text  ro code  0x00b761    0x2d  main.o [1]
+  .near_func.text  ro code  0x00b78e    0x2a  short.o [4]
+  .near_func.text  ro code  0x00b7b8    0x28  main.o [1]
+  .near_func.text  ro code  0x00b7e0    0x28  init.o [4]
+  .near_func.text  ro code  0x00b808    0x27  main.o [1]
+  .near_func.text  ro code  0x00b82f    0x26  gizwits_protocol.o [1]
+  .near_func.text  ro code  0x00b855    0x24  dataPointTools.o [1]
+  .near_func.text  ro code  0x00b879    0x24  dataPointTools.o [1]
+  .iar.init_table  const    0x00b89d     0x8  - Linker created -
+  .near_func.text  ro code  0x00b8a5    0x1a  dc_util.o [4]
+  .near_func.text  ro code  0x00b8bf    0x19  memset.o [4]
+  .near_func.text  ro code  0x00b8d8    0x18  __dbg_xxexit.o [3]
+  .near_func.text  ro code  0x00b8f0    0x17  init.o [4]
+  .near_func.text  ro code  0x00b907    0x16  gizwits_product.o [1]
+  .near_func.text  ro code  0x00b91d    0x13  main.o [1]
+  .near_func.text  ro code  0x00b930    0x13  cstartup.o [4]
+  .near_func.text  ro code  0x00b943    0x11  gizwits_product.o [1]
+  .near_func.text  ro code  0x00b954     0xb  init.o [4]
+  .near_func.text  ro code  0x00b95f     0xa  far.o [4]
+  .near_func.text  ro code  0x00b969     0x9  main.o [1]
+  .near_func.text  ro code  0x00b972     0x5  char.o [4]
+  .near_func.text  ro code  0x00b977     0x5  cexit.o [4]
+  .near_func.text  ro code  0x00b97c     0x3  interrupt.o [4]
+  .near_func.text  ro code  0x00b97f     0x3  low_level_init.o [4]
+  .near_func.text  ro code  0x00b982     0x3  exit.o [4]
+  .near_func.text  ro code  0x00b985     0x3  unhandled_exception.o [4]
+  .near_func.text  ro code  0x00b988     0x1  gizwits_product.o [1]
+  .near_func.text  ro code  0x00b989     0x1  __dbg_break.o [3]
+                          - 0x00b98a  0x390a
+
+"P4":                                   0x66
+  .far.rodata      const    0x00b98a    0x21  gizwits_protocol.o [1]
+  .far.rodata      const    0x00b9ab    0x21  gizwits_protocol.o [1]
+  .far.rodata      const    0x00b9cc     0x9  gizwits_protocol.o [1]
+  .far.rodata      const    0x00b9d5     0x9  gizwits_protocol.o [1]
+  .far.rodata      const    0x00b9de     0x9  gizwits_protocol.o [1]
+  .far.rodata      const    0x00b9e7     0x9  gizwits_protocol.o [1]
+                          - 0x00b9f0    0x66
+
+
+*******************************************************************************
+*** INIT TABLE
+***
+
+          Address   Size
+          -------   ----
+Zero (__iar_zero_init2)
+    1 destination range, total size 0x1b4:
+          0x000010  0x1b4
+
+
+
+*******************************************************************************
+*** MODULE SUMMARY
+***
+
+    Module                 ro code  ro data  rw data  rw data
+                                                       (abs)
+    ------                 -------  -------  -------  -------
+D:\秦东\test1\wifi-uart - 10-20\Debug\Obj: [1]
+    common.o                   268
+    dataPointTools.o         1 076
+    gizwits_product.o          387                 4
+    gizwits_protocol.o       8 396      102      405
+    main.o                     657                27       24
+    ringbuffer.o             2 329
+    ---------------------------------------------------------
+    Total:                  13 113      102      436       24
+
+command line: [2]
+    ---------------------------------------------------------
+    Total:
+
+dbgstm8sld.a: [3]
+    __dbg_break.o                1
+    __dbg_xxexit.o              24
+    ---------------------------------------------------------
+    Total:                      25
+
+dlstm8sln.a: [4]
+    cexit.o                      5
+    char.o                       5
+    cstartup.o                  19
+    dc_util.o                   26
+    exit.o                       3
+    far.o                       10
+    far_util.o                 101
+    init.o                      74
+    interrupt.o                  3      128
+    long.o                     489
+    long_util.o                171
+    low_level_init.o             3
+    memcpy.o                    46
+    memset.o                    25
+    short.o                     42
+    unhandled_exception.o        3
+    vreg_util.o                431
+    vregs.o                                       16
+    ---------------------------------------------------------
+    Total:                   1 456      128       16
+
+    Linker created                        8      256
+-------------------------------------------------------------
+    Grand Total:            14 594      238      708       24
+
+
+*******************************************************************************
+*** ENTRY LIST
+***
+
+Entry                    Address   Size  Type      Object
+-----                    -------   ----  ----      ------
+.iar.init_table$$Base   0x00b89d          --   Gb  - Linker created -
+.iar.init_table$$Limit  0x00b8a5          --   Gb  - Linker created -
+?add32_l0_l0_0x         0x009f95         Code  Gb  long.o [4]
+?add32_l0_l0_l1         0x009f92         Code  Gb  long.o [4]
+?and32_l0_l0_0x         0x00a0e0         Code  Gb  long.o [4]
+?and32_l0_l0_l1         0x00a0dd         Code  Gb  long.o [4]
+?b0                     0x000000         Data  Gb  vregs.o [4]
+?b1                     0x000001         Data  Gb  vregs.o [4]
+?b10                    0x00000a         Data  Gb  vregs.o [4]
+?b11                    0x00000b         Data  Gb  vregs.o [4]
+?b12                    0x00000c         Data  Gb  vregs.o [4]
+?b13                    0x00000d         Data  Gb  vregs.o [4]
+?b14                    0x00000e         Data  Gb  vregs.o [4]
+?b15                    0x00000f         Data  Gb  vregs.o [4]
+?b2                     0x000002         Data  Gb  vregs.o [4]
+?b3                     0x000003         Data  Gb  vregs.o [4]
+?b4                     0x000004         Data  Gb  vregs.o [4]
+?b5                     0x000005         Data  Gb  vregs.o [4]
+?b6                     0x000006         Data  Gb  vregs.o [4]
+?b7                     0x000007         Data  Gb  vregs.o [4]
+?b8                     0x000008         Data  Gb  vregs.o [4]
+?b9                     0x000009         Data  Gb  vregs.o [4]
+?dc32_l0                0x00b8a5         Code  Gb  dc_util.o [4]
+?dc32_l1                0x00b8b2         Code  Gb  dc_util.o [4]
+?dec32_0x_0x            0x009f7e         Code  Gb  long.o [4]
+?dec32_l1_l1            0x009f74         Code  Gb  long.o [4]
+?dec32_l2_l2            0x009f79         Code  Gb  long.o [4]
+?e0                     0x000001         Data  Gb  vregs.o [4]
+?e1                     0x000005         Data  Gb  vregs.o [4]
+?e2                     0x000009         Data  Gb  vregs.o [4]
+?e3                     0x00000d         Data  Gb  vregs.o [4]
+?epilogue_l2            0x00a415         Code  Gb  vreg_util.o [4]
+?epilogue_l2_l3         0x00a412         Code  Gb  vreg_util.o [4]
+?inc32_0x_0x            0x009f66         Code  Gb  long.o [4]
+?inc32_l0_l0            0x009f57         Code  Gb  long.o [4]
+?inc32_l2_l2            0x009f5c         Code  Gb  long.o [4]
+?inc32_l3_l3            0x009f61         Code  Gb  long.o [4]
+?l0                     0x000000         Data  Gb  vregs.o [4]
+?l1                     0x000004         Data  Gb  vregs.o [4]
+?l2                     0x000008         Data  Gb  vregs.o [4]
+?l3                     0x00000c         Data  Gb  vregs.o [4]
+?load24_0x_e0           0x00b32b         Code  Gb  far_util.o [4]
+?load24_asp_e0          0x00b31f         Code  Gb  far_util.o [4]
+?load24_e0_0x           0x00b2df         Code  Gb  far_util.o [4]
+?load24_e0_asp          0x00b2d4         Code  Gb  far_util.o [4]
+?load24_e0_xsp          0x00b2d6         Code  Gb  far_util.o [4]
+?load24_e1_0x           0x00b2f8         Code  Gb  far_util.o [4]
+?load24_e1_asp          0x00b2ed         Code  Gb  far_util.o [4]
+?load24_e1_xsp          0x00b2ef         Code  Gb  far_util.o [4]
+?load24_e2_0x           0x00b311         Code  Gb  far_util.o [4]
+?load24_e2_asp          0x00b306         Code  Gb  far_util.o [4]
+?load24_e2_xsp          0x00b308         Code  Gb  far_util.o [4]
+?load24_xsp_e0          0x00b321         Code  Gb  far_util.o [4]
+?load32_0x_l0           0x00af37         Code  Gb  long_util.o [4]
+?load32_0x_l2           0x00af45         Code  Gb  long_util.o [4]
+?load32_0x_l3           0x00af53         Code  Gb  long_util.o [4]
+?load32_asp_l0          0x00af2b         Code  Gb  long_util.o [4]
+?load32_dbsp_l0         0x00af26         Code  Gb  long_util.o [4]
+?load32_l0_0x           0x00aec6         Code  Gb  long_util.o [4]
+?load32_l0_asp          0x00aebb         Code  Gb  long_util.o [4]
+?load32_l0_dbsp         0x00aeb6         Code  Gb  long_util.o [4]
+?load32_l0_xsp          0x00aebd         Code  Gb  long_util.o [4]
+?load32_l1_0x           0x00aee2         Code  Gb  long_util.o [4]
+?load32_l1_asp          0x00aed7         Code  Gb  long_util.o [4]
+?load32_l1_dbsp         0x00aed2         Code  Gb  long_util.o [4]
+?load32_l1_xsp          0x00aed9         Code  Gb  long_util.o [4]
+?load32_l2_0x           0x00aefe         Code  Gb  long_util.o [4]
+?load32_l2_asp          0x00aef3         Code  Gb  long_util.o [4]
+?load32_l2_dbsp         0x00aeee         Code  Gb  long_util.o [4]
+?load32_l2_xsp          0x00aef5         Code  Gb  long_util.o [4]
+?load32_l3_0x           0x00af1a         Code  Gb  long_util.o [4]
+?load32_l3_asp          0x00af0f         Code  Gb  long_util.o [4]
+?load32_l3_dbsp         0x00af0a         Code  Gb  long_util.o [4]
+?load32_l3_xsp          0x00af11         Code  Gb  long_util.o [4]
+?load32_xsp_l0          0x00af2d         Code  Gb  long_util.o [4]
+?mov_e0_e1              0x00a423         Code  Gb  vreg_util.o [4]
+?mov_e0_e2              0x00a430         Code  Gb  vreg_util.o [4]
+?mov_e0_e3              0x00a43d         Code  Gb  vreg_util.o [4]
+?mov_e1_e0              0x00a44a         Code  Gb  vreg_util.o [4]
+?mov_e1_e2              0x00a457         Code  Gb  vreg_util.o [4]
+?mov_e1_e3              0x00a464         Code  Gb  vreg_util.o [4]
+?mov_e2_e0              0x00a471         Code  Gb  vreg_util.o [4]
+?mov_e2_e1              0x00a47e         Code  Gb  vreg_util.o [4]
+?mov_e3_e0              0x00a48b         Code  Gb  vreg_util.o [4]
+?mov_e3_e1              0x00a498         Code  Gb  vreg_util.o [4]
+?mov_e3_e2              0x00a4a2         Code  Gb  vreg_util.o [4]
+?mov_l0_l1              0x00a420         Code  Gb  vreg_util.o [4]
+?mov_l0_l2              0x00a42d         Code  Gb  vreg_util.o [4]
+?mov_l0_l3              0x00a43a         Code  Gb  vreg_util.o [4]
+?mov_l1_l0              0x00a447         Code  Gb  vreg_util.o [4]
+?mov_l1_l2              0x00a454         Code  Gb  vreg_util.o [4]
+?mov_l1_l3              0x00a461         Code  Gb  vreg_util.o [4]
+?mov_l2_l0              0x00a46e         Code  Gb  vreg_util.o [4]
+?mov_l2_l1              0x00a47b         Code  Gb  vreg_util.o [4]
+?mov_l3_l0              0x00a488         Code  Gb  vreg_util.o [4]
+?mov_l3_l1              0x00a495         Code  Gb  vreg_util.o [4]
+?mov_w1_w3              0x00a426         Code  Gb  vreg_util.o [4]
+?mov_w1_w5              0x00a433         Code  Gb  vreg_util.o [4]
+?mov_w1_w7              0x00a440         Code  Gb  vreg_util.o [4]
+?mov_w3_w1              0x00a44d         Code  Gb  vreg_util.o [4]
+?mov_w3_w5              0x00a45a         Code  Gb  vreg_util.o [4]
+?mov_w3_w7              0x00a467         Code  Gb  vreg_util.o [4]
+?mov_w5_w1              0x00a474         Code  Gb  vreg_util.o [4]
+?mov_w5_w3              0x00a481         Code  Gb  vreg_util.o [4]
+?mov_w6_w1              0x00a419         Code  Gb  vreg_util.o [4]
+?mov_w7_w1              0x00a48e         Code  Gb  vreg_util.o [4]
+?mov_w7_w3              0x00a49b         Code  Gb  vreg_util.o [4]
+?mov_w7_w5              0x00a4a5         Code  Gb  vreg_util.o [4]
+?mul32_l0_l0_l1         0x009fcb         Code  Gb  long.o [4]
+?or32_l0_l0_0x          0x00a0fb         Code  Gb  long.o [4]
+?or32_l0_l0_l1          0x00a0f8         Code  Gb  long.o [4]
+?pop_e1                 0x00a375         Code  Gb  vreg_util.o [4]
+?pop_e2                 0x00a384         Code  Gb  vreg_util.o [4]
+?pop_e3                 0x00a393         Code  Gb  vreg_util.o [4]
+?pop_l0                 0x00a3de         Code  Gb  vreg_util.o [4]
+?pop_l1                 0x00a3e9         Code  Gb  vreg_util.o [4]
+?pop_l2                 0x00a3f4         Code  Gb  vreg_util.o [4]
+?pop_l3                 0x00a3ff         Code  Gb  vreg_util.o [4]
+?push_e0                0x00a315         Code  Gb  vreg_util.o [4]
+?push_e1                0x00a32d         Code  Gb  vreg_util.o [4]
+?push_e2                0x00a345         Code  Gb  vreg_util.o [4]
+?push_e3                0x00a35d         Code  Gb  vreg_util.o [4]
+?push_l0                0x00a3ad         Code  Gb  vreg_util.o [4]
+?push_l1                0x00a3b2         Code  Gb  vreg_util.o [4]
+?push_l2                0x00a3b7         Code  Gb  vreg_util.o [4]
+?push_l3                0x00a3bc         Code  Gb  vreg_util.o [4]
+?push_w4                0x00a2fd         Code  Gb  vreg_util.o [4]
+?scmp32_c_l0_l1         0x00a0c6         Code  Gb  long.o [4]
+?sext32_l0_x            0x00a135         Code  Gb  long.o [4]
+?sll16_x_x_10           0x00b7a0         Code  Gb  short.o [4]
+?sll16_x_x_11           0x00b79f         Code  Gb  short.o [4]
+?sll16_x_x_12           0x00b79e         Code  Gb  short.o [4]
+?sll16_x_x_4            0x00b7a6         Code  Gb  short.o [4]
+?sll16_x_x_5            0x00b7a5         Code  Gb  short.o [4]
+?sll16_x_x_6            0x00b7a4         Code  Gb  short.o [4]
+?sll16_x_x_7            0x00b7a3         Code  Gb  short.o [4]
+?sll16_x_x_8            0x00b7a2         Code  Gb  short.o [4]
+?sll16_x_x_9            0x00b7a1         Code  Gb  short.o [4]
+?sll16_x_x_a            0x00b78e         Code  Gb  short.o [4]
+?sll32_0x_0x_a          0x00a116         Code  Gb  long.o [4]
+?sll32_l0_l0_a          0x00a113         Code  Gb  long.o [4]
+?sra16_x_x_a            0x00b796         Code  Gb  short.o [4]
+?srl16_x_x_10           0x00b7ad         Code  Gb  short.o [4]
+?srl16_x_x_11           0x00b7ac         Code  Gb  short.o [4]
+?srl16_x_x_12           0x00b7ab         Code  Gb  short.o [4]
+?srl16_x_x_4            0x00b7b3         Code  Gb  short.o [4]
+?srl16_x_x_5            0x00b7b2         Code  Gb  short.o [4]
+?srl16_x_x_6            0x00b7b1         Code  Gb  short.o [4]
+?srl16_x_x_7            0x00b7b0         Code  Gb  short.o [4]
+?srl16_x_x_8            0x00b7af         Code  Gb  short.o [4]
+?srl16_x_x_9            0x00b7ae         Code  Gb  short.o [4]
+?srl32_0x_0x_a          0x00a127         Code  Gb  long.o [4]
+?srl32_l0_l0_a          0x00a124         Code  Gb  long.o [4]
+?srl8_a_a_5             0x00b972         Code  Gb  char.o [4]
+?sub32_l0_dl_l1         0x009fad         Code  Gb  long.o [4]
+?sub32_l0_l0_0x         0x009fb3         Code  Gb  long.o [4]
+?sub32_l0_l0_l1         0x009fb0         Code  Gb  long.o [4]
+?ucmp24_c_0x_e0         0x00b95f         Code  Gb  far.o [4]
+?ucmp32_c_l0_l1         0x00a0bb         Code  Gb  long.o [4]
+?udiv32_l0_l0_l1        0x00a04e         Code  Gb  long.o [4]
+?umod32_l1_l0_dl        0x00a049         Code  Gb  long.o [4]
+?umod32_l1_l0_l1        0x00a04e         Code  Gb  long.o [4]
+?w0                     0x000000         Data  Gb  vregs.o [4]
+?w1                     0x000002         Data  Gb  vregs.o [4]
+?w2                     0x000004         Data  Gb  vregs.o [4]
+?w3                     0x000006         Data  Gb  vregs.o [4]
+?w4                     0x000008         Data  Gb  vregs.o [4]
+?w5                     0x00000a         Data  Gb  vregs.o [4]
+?w6                     0x00000c         Data  Gb  vregs.o [4]
+?w7                     0x00000e         Data  Gb  vregs.o [4]
+ALL_LED_Init            0x00b6a2   0x31  Code  Gb  main.o [1]
+BeepInit                0x00b91d   0x13  Code  Gb  main.o [1]
+CSTACK$$Base            0x000700          --   Gb  - Linker created -
+CSTACK$$Limit           0x000800          --   Gb  - Linker created -
+INTVEC$$Base            0x008000          --   Gb  - Linker created -
+INTVEC$$Limit           0x008080          --   Gb  - Linker created -
+Region$$Table$$Base     0x00b89d          --   Gb  - Linker created -
+Region$$Table$$Limit    0x00b8a5          --   Gb  - Linker created -
+TIM4_ARR                0x005348    0x1  Data  Gb  main.o [1]
+TIM4_CNTR               0x005346    0x1  Data  Gb  main.o [1]
+TIM4_UPDATE_IRQHandler  0x00b63c   0x34  Code  Gb  main.o [1]
+Timer4Init              0x00b761   0x2d  Code  Gb  main.o [1]
+UART1_BRR1              0x005232    0x1  Data  Gb  main.o [1]
+UART1_BRR2              0x005233    0x1  Data  Gb  main.o [1]
+UART1_DR                0x005231    0x1  Data  Gb  main.o [1]
+UART1_Init              0x00b7b8   0x28  Code  Gb  main.o [1]
+UART1_RX_RXNE           0x00b6d3   0x31  Code  Gb  main.o [1]
+Uart_SendData           0x00b969    0x9  Code  Gb  main.o [1]
+_A_BEEP_CSR             0x0050f3    0x1  Data  Gb  main.o [1]
+_A_CLK_CKDIVR           0x0050c6    0x1  Data  Gb  main.o [1]
+_A_PA_IDR               0x005001    0x1  Data  Gb  main.o [1]
+_A_PC_CR1               0x00500d    0x1  Data  Gb  main.o [1]
+_A_PC_CR2               0x00500e    0x1  Data  Gb  main.o [1]
+_A_PC_DDR               0x00500c    0x1  Data  Gb  main.o [1]
+_A_PC_IDR               0x00500b    0x1  Data  Gb  main.o [1]
+_A_PD_CR1               0x005012    0x1  Data  Gb  main.o [1]
+_A_PD_CR2               0x005013    0x1  Data  Gb  main.o [1]
+_A_PD_DDR               0x005011    0x1  Data  Gb  main.o [1]
+_A_PD_IDR               0x005010    0x1  Data  Gb  main.o [1]
+_A_TIM4_CR1             0x005340    0x1  Data  Gb  main.o [1]
+_A_TIM4_EGR             0x005345    0x1  Data  Gb  main.o [1]
+_A_TIM4_IER             0x005343    0x1  Data  Gb  main.o [1]
+_A_TIM4_PSCR            0x005347    0x1  Data  Gb  main.o [1]
+_A_TIM4_SR              0x005344    0x1  Data  Gb  main.o [1]
+_A_UART1_CR1            0x005234    0x1  Data  Gb  main.o [1]
+_A_UART1_CR2            0x005235    0x1  Data  Gb  main.o [1]
+_A_UART1_SR             0x005230    0x1  Data  Gb  main.o [1]
+__DebugBreak            0x00b989    0x1  Code  Gb  __dbg_break.o [3]
+__exit                  0x00b8d8   0x18  Code  Gb  __dbg_xxexit.o [3]
+__iar_data_init2        0x00b8f0   0x17  Code  Gb  init.o [4]
+__iar_program_start     0x00b930         Code  Gb  cstartup.o [4]
+__iar_unhandled_exception
+                        0x00b985         Code  Gb  unhandled_exception.o [4]
+__iar_zero_init2        0x00b7e0   0x28  Code  Gb  init.o [4]
+__intvec                0x008000         Data  Gb  interrupt.o [4]
+__low_level_init        0x00b97f    0x3  Code  Gb  low_level_init.o [4]
+_exit                   0x00b977         Code  Gb  cexit.o [4]
+_interrupt_20           0x00b6d3         Code  Gb  main.o [1]
+_interrupt_25           0x00b63c         Code  Gb  main.o [1]
+beetime_count           0x0001bf    0x2  Data  Gb  main.o [1]
+bottom                  0x0001b5    0x3  Data  Gb  main.o [1]
+currentDataPoint        0x00018b   0x13  Data  Gb  main.o [1]
+exchangeBytes           0x00b5c4   0x41  Code  Gb  common.o [1]
+exchangeWord            0x00b3fd   0x5a  Code  Gb  common.o [1]
+exit                    0x00b982    0x3  Code  Gb  exit.o [4]
+gizAcrossByteJudge      0x00b203   0x6b  Code  Gb  dataPointTools.o [1]
+gizByteOrderExchange    0x00ae06   0xb0  Code  Gb  dataPointTools.o [1]
+gizCheckReport          0x009635  0x28e  Code  Lc  gizwits_protocol.o [1]
+gizDataPoint2Event      0x008637  0x38f  Code  Lc  gizwits_protocol.o [1]
+gizDataPoints2ReportData
+                        0x00904f  0x2f5  Code  Lc  gizwits_protocol.o [1]
+gizDevReportPolicy      0x00ad46   0xc0  Code  Lc  gizwits_protocol.o [1]
+gizGetTimerCount        0x00b916    0x6  Code  Gb  gizwits_product.o [1]
+gizProtocolAckHandle    0x00b4fa   0x44  Code  Lc  gizwits_protocol.o [1]
+gizProtocolCommonAck    0x00b118   0x7a  Code  Lc  gizwits_protocol.o [1]
+gizProtocolErrorCmd     0x00b090   0x88  Code  Lc  gizwits_protocol.o [1]
+gizProtocolGetDeviceInfo
+                        0x00a903  0x154  Code  Lc  gizwits_protocol.o [1]
+gizProtocolGetOnePacket
+                        0x009b36  0x22b  Code  Lc  gizwits_protocol.o [1]
+gizProtocolHeadInit     0x00b582   0x42  Code  Lc  gizwits_protocol.o [1]
+gizProtocolIssuedDataAck
+                        0x009d61  0x1f6  Code  Lc  gizwits_protocol.o [1]
+gizProtocolIssuedProcess
+                        0x00a140  0x1bd  Code  Lc  gizwits_protocol.o [1]
+gizProtocolModuleInfoHandle
+                        0x00b4ae   0x4c  Code  Lc  gizwits_protocol.o [1]
+gizProtocolModuleStatus
+                        0x008080  0x5b7  Code  Lc  gizwits_protocol.o [1]
+gizProtocolNTP          0x00b339   0x64  Code  Lc  gizwits_protocol.o [1]
+gizProtocolReboot       0x00b82f   0x26  Code  Lc  gizwits_protocol.o [1]
+gizProtocolResendData   0x00b704   0x2f  Code  Lc  gizwits_protocol.o [1]
+gizProtocolSum          0x00b192   0x71  Code  Gb  common.o [1]
+gizProtocolWaitAck      0x00b39d   0x60  Code  Lc  gizwits_protocol.o [1]
+gizProtocolWaitAckCheck
+                        0x00b26e   0x66  Code  Lc  gizwits_protocol.o [1]
+gizPutData              0x00b457   0x57  Code  Gb  gizwits_protocol.o [1]
+gizReportData           0x00ac7a   0xcc  Code  Lc  gizwits_protocol.o [1]
+gizStandardCompressValue
+                        0x00aa57  0x14a  Code  Gb  dataPointTools.o [1]
+gizStandardDecompressionValue
+                        0x00a4ac  0x187  Code  Gb  dataPointTools.o [1]
+gizTimerMs              0x00b907    0xf  Code  Gb  gizwits_product.o [1]
+gizX2Y                  0x00b879   0x24  Code  Gb  dataPointTools.o [1]
+gizY2X                  0x00b855   0x24  Code  Gb  dataPointTools.o [1]
+gizwitsEventProcess     0x00a7a8  0x15b  Code  Gb  gizwits_product.o [1]
+gizwitsHandle           0x009344  0x2f1  Code  Gb  gizwits_protocol.o [1]
+gizwitsInit             0x00b605   0x37  Code  Gb  gizwits_protocol.o [1]
+gizwitsProtocol         0x000010  0x143  Data  Gb  gizwits_protocol.o [1]
+gizwitsSetMode          0x0098c3  0x273  Code  Gb  gizwits_protocol.o [1]
+keyscan                 0x00aba1   0xd9  Code  Gb  main.o [1]
+main                    0x00b808   0x27  Code  Gb  main.o [1]
+mcuRestart              0x00b91c    0x1  Code  Gb  gizwits_product.o [1]
+memcpy                  0x00b733   0x2e  Code  Gb  memcpy.o [4]
+memset                  0x00b8bf   0x19  Code  Gb  memset.o [4]
+pRb                     0x00019e    0xb  Data  Gb  gizwits_protocol.o [1]
+push                    0x0001b8    0x3  Data  Gb  main.o [1]
+rbBuf                   0x000153   0x38  Data  Lc  gizwits_protocol.o [1]
+rbCanRead               0x00a633  0x175  Code  Gb  ringbuffer.o [1]
+rbCanWrite              0x00b53e   0x44  Code  Gb  ringbuffer.o [1]
+rbCapacity              0x00b670   0x32  Code  Gb  ringbuffer.o [1]
+rbCreate                0x00af61   0xa5  Code  Gb  ringbuffer.o [1]
+rbRead                  0x008d1e  0x331  Code  Gb  ringbuffer.o [1]
+rbWrite                 0x0089c6  0x358  Code  Gb  ringbuffer.o [1]
+timerMsCount            0x0001a9    0x4  Data  Lc  gizwits_product.o [1]
+uartWrite               0x00b006   0x8a  Code  Gb  main.o [1]
+userHandle              0x00b988    0x1  Code  Gb  gizwits_product.o [1]
+userInit                0x00b943   0x11  Code  Gb  gizwits_product.o [1]
+
+
+[1] = D:\秦东\test1\wifi-uart - 10-20\Debug\Obj
+[2] = command line
+[3] = dbgstm8sld.a
+[4] = dlstm8sln.a
+
+  14 594 bytes of readonly  code memory
+     238 bytes of readonly  data memory
+     708 bytes of readwrite data memory (+ 24 absolute)
+
+Errors: none
+Warnings: none
